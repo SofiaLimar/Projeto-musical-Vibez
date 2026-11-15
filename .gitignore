@@ -1,0 +1,8 @@
+venv/
+.env
+__pycache__/
+audio_previas/
+.venv/
+venv-essentia/
+.DS_Store
+data/cache_lastfm/

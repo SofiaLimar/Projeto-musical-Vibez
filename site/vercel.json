@@ -1,0 +1,9 @@
+{
+  "functions": {
+    "api/index.py": {
+      "maxDuration": 60,
+      "includeFiles": "api/_dados/**"
+    }
+  },
+  "rewrites": [{ "source": "/", "destination": "/index.html" }]
+}

@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>vibez · músicas a partir de fotos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="pagina">
+    <header class="topo">
+      <a class="marca" href="#" data-acao="inicio">
+        <span class="logo">vibez<sup>●</sup></span>
+        <span class="slogan">Uma foto. Um novo som.</span>
+      </a>
+      <nav class="nav">
+        <a href="#como-funciona" data-acao="como-funciona">Como funciona</a>
+      </nav>
+    </header>
+
+    <!-- ============ TELA 1 · ENVIO ============ -->
+    <main id="tela-inicio" class="tela">
+      <section class="hero">
+        <div class="hero-texto">
+          <span class="chip">Da sua galeria para o seu fone</span>
+          <h1>Toda foto tem<br>uma trilha sonora.<br><em>Descubra a sua.</em></h1>
+          <p class="sub">Escolha uma imagem para receber uma seleção de músicas.<br>Ouça prévias de 30 segundos e acesse as faixas no Deezer.</p>
+
+          <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Enviar foto">
+            <div class="dz-linha">
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+              <div class="dz-texto">
+                <strong class="so-mouse">Arraste sua foto até aqui</strong>
+                <span class="so-mouse">ou anexe uma imagem</span>
+                <strong class="so-toque">Anexe uma imagem</strong>
+              </div>
+              <button class="btn btn-lilas" data-acao="escolher">Escolher foto <span aria-hidden="true">→</span></button>
+            </div>
+            <p class="dz-meta">JPG, PNG, WEBP ou HEIC</p>
+            <div class="dz-carregando" aria-live="polite">
+              <div class="ondas pequenas" aria-hidden="true"></div>
+              <span id="msg-carregando">Ouvindo sua foto…</span>
+            </div>
+          </div>
+          <p class="privacidade">
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg>
+            Sua foto é analisada e descartada logo em seguida.
+          </p>
+          <fieldset class="generos">
+            <legend>Gêneros</legend>
+            <div class="generos-lista" id="generos"></div>
+          </fieldset>
+          <p class="erro" id="erro" role="alert"></p>
+        </div>
+
+        <div class="hero-arte" aria-hidden="true">
+          <div class="arte">
+            <div class="foto-card">
+              <img class="foto foto-exemplo" src="foto-inicial.jpg" alt="">
+            </div>
+            <div class="mini-pl" aria-hidden="true">
+              <div class="mini-topo"><span class="mini-logo">vibez<sup>●</sup></span><i class="mini-pill"></i></div>
+              <i class="l w45 grosso"></i>
+              <div class="mini-corpo">
+                <div class="mini-lado">
+                  <div class="mini-foto"></div>
+                  <i class="l w50 lilas fino"></i>
+                  <i class="l w80"></i>
+                  <i class="l w90 fino"></i>
+                  <div class="mini-tags"><i></i><i></i><i></i></div>
+                </div>
+                <div class="mini-lista">
+                  <div class="mini-cab"><span><i class="l w30 lilas fino"></i><i class="l w70 grosso"></i></span><i class="mini-botao"></i></div>
+                <div class="mini-faixa ativa"><b></b><span><i class="l w70"></i><i class="l w40 fino"></i></span><i class="mini-link"></i></div>
+                <div class="mini-faixa"><b></b><span><i class="l w70"></i><i class="l w40 fino"></i></span><i class="mini-link"></i></div>
+                <div class="mini-faixa"><b></b><span><i class="l w70"></i><i class="l w40 fino"></i></span><i class="mini-link"></i></div>
+                <div class="mini-faixa"><b></b><span><i class="l w70"></i><i class="l w40 fino"></i></span><i class="mini-link"></i></div>
+                <div class="mini-faixa"><b></b><span><i class="l w70"></i><i class="l w40 fino"></i></span><i class="mini-link"></i></div>
+                </div>
+              </div>
+            </div>
+            <div class="som-card">
+              <span>O que você vê vira som.</span>
+              <div class="ondas"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="como" id="como-funciona" aria-label="Como funciona">
+        <ol class="passos">
+          <li><span class="num">01</span><div><h3>Escolha um momento</h3><p>Envie uma foto que tenha a sua energia.</p></div></li>
+          <li><span class="num">02</span><div><h3>A gente traduz a vibe</h3><p>Cores, cenário e atmosfera viram música.</p></div></li>
+          <li><span class="num">03</span><div><h3>Dê o play na descoberta</h3><p>Ouça 30 segundos. Curtiu? Vá para o Deezer.</p></div></li>
+        </ol>
+      </section>
+    </main>
+
+    <!-- ============ TELA 2 · PLAYLIST ============ -->
+    <main id="tela-playlist" class="tela" hidden>
+      <div class="barra-volta">
+        <a class="link-volta" href="#" data-acao="inicio">← Voltar ao início</a>
+        <span class="chip-ok">✓ Seleção pronta</span>
+      </div>
+      <h1 class="titulo-pl">Músicas recomendadas</h1>
+      <p class="sub">Ouça as prévias ou abra as faixas completas no Deezer.</p>
+
+      <div class="grade-pl">
+        <aside class="cartao lateral">
+          <div class="foto-card plano">
+            <span class="chip-claro">Sua foto</span>
+            <img class="foto" id="foto-enviada" alt="Foto enviada">
+          </div>
+          <span class="rotulo lilas">Sobre a recomendação</span>
+          <h3 class="criterios-titulo">Humor e energia da foto</h3>
+          <p class="criterios-texto" id="criterios-texto"></p>
+          <div class="tags" id="tags"></div>
+          <div class="medidor">
+            <div class="medidor-cab"><span>Humor</span><span id="txt-valencia"></span></div>
+            <div class="trilho"><div class="preenche" id="bar-valencia"></div></div>
+            <div class="medidor-pontas"><span>melancólico</span><span>alegre</span></div>
+          </div>
+          <div class="medidor">
+            <div class="medidor-cab"><span>Energia</span><span id="txt-energia"></span></div>
+            <div class="trilho"><div class="preenche" id="bar-energia"></div></div>
+            <div class="medidor-pontas"><span>calma</span><span>agitada</span></div>
+          </div>
+          <p class="nota-mini">Percentil: posição da foto entre todas as fotos. As músicas escolhidas ocupam a mesma posição entre as músicas.</p>
+        </aside>
+
+        <section class="playlist">
+          <div class="pl-cab">
+            <div>
+              <span class="rotulo lilas">Sua playlist</span>
+              <h2 id="pl-nome"></h2>
+              <p class="pl-meta" id="pl-meta"></p>
+            </div>
+          </div>
+          <div class="aviso alerta" id="pl-aviso" hidden></div>
+          <div class="aviso">▸ Ouça prévias de 30 segundos. Acesse as faixas completas no Deezer.</div>
+
+          <div class="tabela" role="table" aria-label="Faixas recomendadas">
+            <div class="linha cab" role="row">
+              <span></span><span>Faixa / artista</span><span class="col-previa">Prévia</span><span class="col-link">Ouça completa</span>
+            </div>
+            <div id="faixas"></div>
+          </div>
+          <p class="nota-mini" id="pl-rodape">As prévias vêm do Deezer e dependem da disponibilidade de cada faixa.</p>
+        </section>
+      </div>
+
+      <section class="cartao cta">
+        <div>
+          <h3>Envie outra imagem</h3>
+          <p>Escolha uma foto para receber novas recomendações.</p>
+        </div>
+        <button class="btn btn-lilas largo" data-acao="escolher">Enviar outra foto <span aria-hidden="true">↗</span></button>
+      </section>
+    </main>
+
+    <footer class="rodape">
+      <span class="logo">vibez</span>
+      <span>Recomendação musical por foto.</span>
+      <span class="meio">Prévias de 30 s · Músicas completas no Deezer</span>
+      <a href="#">Privacidade</a>
+      <a href="#">Sobre</a>
+    </footer>
+  </div>
+
+  <input type="file" id="arquivo" accept="image/*" class="input-escondido" tabindex="-1" aria-hidden="true">
+  <audio id="player" preload="none"></audio>
+
+  <script src="api.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

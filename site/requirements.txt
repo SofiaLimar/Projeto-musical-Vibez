@@ -1,0 +1,6 @@
+# dependências da função Python da Vercel (api/index.py)
+fastapi
+python-multipart
+numpy
+pillow
+onnxruntime
