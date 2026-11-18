@@ -45,7 +45,7 @@ O modelo de foto erra fotos de festa: no OASIS, *Party*, *Drink* e *Alcohol* tê
    - o alvo vira `(max(zv, 0,5), max(ze, 1,0))`, ou seja, é puxado para alegre + agitada;
    - os gêneros são os escolhidos pelo usuário ou, se ele não escolheu nenhum, Pop, Dance, Electro, Rap/Hip Hop e R&B;
    - só entram músicas com `zv > 0` e `ze > 0,3`. Se sobrarem menos de 30, esse filtro de humor e energia é retirado;
-   - a nota vira `distância − 0,5 × pop − 0,5 × rótulo_match`, com no máximo 1 música por artista.
+   - a nota vira `distância − ALFA × pop − 0,5 × rótulo_match` (`ALFA` = 2, o mesmo do modo normal), com no máximo 1 música por artista.
 3. **Senão:** o algoritmo normal, **sem** o termo de rótulos.
 
 **`rótulo_match`** existe para que duas festas diferentes não recebam a mesma playlist. Sem ele, os alvos coincidiam e as playlists repetiam quase 15 de 15 músicas; com ele, repetiram 4 de 15. O cálculo:
@@ -194,10 +194,13 @@ O Ridge vira uma conta só: `w = coef / scale`, `b = intercept − Σ(coef × me
 | Arquivo | Função |
 |---|---|
 | `foto_parte1_treino.ipynb` | Colab: treina CLIP + Ridge no OASIS e salva o `.joblib` |
-| `foto_parte2_playlist.ipynb` | Colab: limpeza, popularidade, gênero, régua e playlist |
+| `notas_essentia.ipynb` | Colab: notas de valência/energia das prévias (MusiCNN + emoMusic) → `notas_musicas.csv` |
+| `foto_parte2_playlist.ipynb` | Colab: limpeza, popularidade, gênero, régua e playlist (a playlist usa `site/api/_vibez/recomendar.py`) |
 | `buscar_popularidade.py`, `buscar_fas_artistas.py`, `buscar_generos_albuns.py` | coletam no Deezer o rank, os fãs e os gêneros (máx. 8 req/s) |
 | `montar_popularidade.py` | gera `data/popularidade_final.csv` |
 | `contar_rotulos.py`, `baixar_audio.py` | montaram a base (Last.fm/MuSe → prévias do Deezer) |
 | `site/public/` | frontend estático (`index.html`, `app.js`, `styles.css`; `api.js` é o ponto de conexão) |
-| `site/api/index.py` | a API (FastAPI na Vercel), com o algoritmo da seção 1; dados em `site/api/_dados/` |
+| `site/api/_vibez/recomendar.py` | o algoritmo da seção 1 (única cópia, usada pela API, pelo notebook e pelos testes) |
+| `site/api/index.py` | a API (FastAPI na Vercel): CLIP, leitura da foto e contrato da seção 4; dados em `site/api/_dados/` |
+| `tests/test_recomendar.py` | testes do algoritmo (`python -m unittest discover tests`, só precisa de numpy) |
 | `servidor/` | Ferramentas da API: `celula_exportar_colab.py` (gera `modelo.json`/`musicas.json` no Colab), `preparar_textos.py` (gera `textos.npz`), `validar_onnx.py`, `rodar_local.py` (site + API no Mac). A API de verdade fica em `site/api/index.py`. |
