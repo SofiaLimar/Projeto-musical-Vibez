@@ -202,5 +202,6 @@ O Ridge vira uma conta só: `w = coef / scale`, `b = intercept − Σ(coef × me
 | `site/public/` | frontend estático (`index.html`, `app.js`, `styles.css`; `api.js` é o ponto de conexão) |
 | `site/api/_vibez/recomendar.py` | o algoritmo da seção 1 (única cópia, usada pela API, pelo notebook e pelos testes) |
 | `site/api/index.py` | a API (FastAPI na Vercel): CLIP, leitura da foto e contrato da seção 4; dados em `site/api/_dados/` |
-| `tests/test_recomendar.py` | testes do algoritmo (`python -m unittest discover tests`, só precisa de numpy) |
+| `docs/avaliacao.md`, `avaliacao/` | avaliação humana (Passo 3 do review): protocolo, `gerar.py` (página cega para as avaliadoras), `analisar.py` (α de Krippendorff, Wilcoxon) |
+| `tests/` | testes (`python -m unittest discover tests`): algoritmo (`test_recomendar.py`) e α de Krippendorff contra o exemplo publicado (`test_alfa.py`) |
 | `servidor/` | Ferramentas da API: `celula_exportar_colab.py` (gera `modelo.json`/`musicas.json` no Colab), `preparar_textos.py` (gera `textos.npz`), `validar_onnx.py`, `rodar_local.py` (site + API no Mac). A API de verdade fica em `site/api/index.py`. |

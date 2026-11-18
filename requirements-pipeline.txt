@@ -5,6 +5,7 @@ pandas==3.1.0
 pillow==13.0.0
 requests==2.34.2
 scikit-learn==1.9.1
+scipy==1.18.1          # avaliacao/analisar.py (teste de Wilcoxon)
 soundfile==0.14.0
 
 # servidor/validar_onnx.py e servidor/preparar_textos.py também usam

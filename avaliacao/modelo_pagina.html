@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Avaliação: a playlist combina com a foto?</title>
+<style>
+  :root { --fundo:#faf8f5; --texto:#1f1d1a; --suave:#6b665e; --linha:#e4dfd7; --destaque:#3b5bdb; --ok:#2f9e44; --aviso:#c2410c; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; background:var(--fundo); color:var(--texto); }
+  main { max-width: 1100px; margin: 0 auto; padding: 24px 20px 120px; }
+  h1 { font-size: 1.5rem; margin: 0 0 8px; }
+  .suave { color: var(--suave); }
+  .cartao { background:#fff; border:1px solid var(--linha); border-radius:12px; padding:20px; }
+  .pergunta { font-size:1.15rem; font-weight:600; }
+  .escala { display:grid; grid-template-columns: repeat(5, 1fr); gap:6px; margin-top:6px; }
+  .escala button { padding:8px 4px; border:1px solid var(--linha); background:#fff; border-radius:8px; cursor:pointer; font:inherit; font-size:.85rem; line-height:1.2; }
+  .escala button b { display:block; font-size:1.1rem; }
+  .escala button[aria-pressed="true"] { background:var(--destaque); border-color:var(--destaque); color:#fff; }
+  .tela-foto { display:grid; grid-template-columns: minmax(260px, 380px) 1fr; gap:24px; align-items:start; }
+  .tela-foto img { width:100%; border-radius:12px; position:sticky; top:16px; }
+  .playlist { margin-bottom:20px; }
+  .playlist h2 { font-size:1.1rem; margin:0 0 4px; display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
+  .contador { font-size:.85rem; font-weight:400; color:var(--suave); }
+  .contador.ok { color:var(--ok); }
+  ol { margin:8px 0 12px; padding:0; list-style:none; }
+  ol li { display:flex; align-items:center; gap:10px; padding:5px 0; border-bottom:1px solid var(--linha); }
+  ol li:last-child { border-bottom:0; }
+  .play { width:34px; height:34px; flex:none; border-radius:50%; border:1px solid var(--linha); background:#fff; cursor:pointer; font-size:.9rem; }
+  .play.tocando { background:var(--destaque); color:#fff; border-color:var(--destaque); }
+  .play:disabled { opacity:.4; cursor:default; }
+  .faixa { min-width:0; }
+  .faixa .t { font-weight:500; }
+  .faixa .a { color:var(--suave); font-size:.9rem; }
+  .barra { position:fixed; left:0; right:0; bottom:0; background:#fff; border-top:1px solid var(--linha); padding:12px 20px; }
+  .barra-int { max-width:1100px; margin:0 auto; display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+  .barra .cresce { flex:1; }
+  .botao { padding:10px 18px; border-radius:8px; border:1px solid var(--linha); background:#fff; font:inherit; cursor:pointer; }
+  .botao.principal { background:var(--destaque); color:#fff; border-color:var(--destaque); }
+  .botao:disabled { opacity:.45; cursor:default; }
+  .aviso { color:var(--aviso); font-size:.9rem; }
+  input[type=text] { font:inherit; padding:10px 12px; border:1px solid var(--linha); border-radius:8px; width:min(320px,100%); }
+  @media (max-width: 760px) { .tela-foto { grid-template-columns: 1fr; } .tela-foto img { position:static; } }
+</style>
+</head>
+<body>
+<main id="app"></main>
+<div class="barra" id="barra" hidden>
+  <div class="barra-int">
+    <button class="botao" id="voltar">← Anterior</button>
+    <span class="cresce" id="progresso"></span>
+    <span class="aviso" id="aviso"></span>
+    <button class="botao" id="exportar">Exportar respostas</button>
+    <button class="botao principal" id="avancar">Próxima →</button>
+  </div>
+</div>
+<audio id="player"></audio>
+<script>
+const DADOS = __DADOS__;
+const ROTULOS = ["Não combina nada", "Combina pouco", "Mais ou menos", "Combina bem", "Combina totalmente"];
+const MIN_PREVIAS = 3;
+
+const app = document.getElementById("app");
+const player = document.getElementById("player");
+let estado = null;          // { avaliador, ordem, posicoes, respostas: {codigo: {nota, previas:[ids], quando}}, atual }
+let tocando = null;         // { botao, deezerId }
+
+// ---------- utilidades ----------
+function el(tag, attrs = {}, ...filhos) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") e.className = v; else if (k.startsWith("on")) e.addEventListener(k.slice(2), v); else e.setAttribute(k, v);
+  }
+  for (const f of filhos) e.append(f);
+  return e;
+}
+function semente(texto) {            // hash FNV-1a de 32 bits
+  let h = 2166136261;
+  for (const c of texto) { h ^= c.codePointAt(0); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+function aleatorio(s) {               // mulberry32
+  return () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
+function embaralhar(lista, rnd) {
+  const a = lista.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+const chaveLocal = nome => `vibez_avaliacao_${DADOS.estudo}_${nome}`;
+function salvar() {
+  try { localStorage.setItem(chaveLocal(estado.avaliador), JSON.stringify(estado)); } catch (e) { /* sem armazenamento: segue só na memória */ }
+}
+function carregar(nome) {
+  try { const s = localStorage.getItem(chaveLocal(nome)); return s ? JSON.parse(s) : null; } catch (e) { return null; }
+}
+
+// ---------- prévias do Deezer (JSONP, como no site) ----------
+const previas = new Map();
+function buscarPrevia(deezerId) {
+  return new Promise((resolve, reject) => {
+    const cb = `_deezer_${deezerId}_${Date.now()}`;
+    const s = document.createElement("script");
+    const limpar = () => { delete window[cb]; s.remove(); };
+    window[cb] = dados => { limpar(); dados && dados.preview ? resolve(dados.preview) : reject(new Error("sem prévia")); };
+    s.onerror = () => { limpar(); reject(new Error("falha de rede")); };
+    s.src = `https://api.deezer.com/track/${encodeURIComponent(deezerId)}?output=jsonp&callback=${cb}`;
+    document.head.append(s);
+  });
+}
+function parar() {
+  player.pause();
+  if (tocando) { tocando.botao.classList.remove("tocando"); tocando.botao.textContent = "▶"; tocando = null; }
+}
+async function alternar(botao, deezerId, codigo, atualizar) {
+  if (tocando && tocando.botao === botao) { parar(); return; }
+  parar();
+  botao.disabled = true;
+  try {
+    if (!previas.has(deezerId)) previas.set(deezerId, await buscarPrevia(deezerId));
+    player.src = previas.get(deezerId);
+    await player.play();
+    tocando = { botao, deezerId };
+    botao.classList.add("tocando"); botao.textContent = "❚❚";
+    const r = estado.respostas[codigo] || (estado.respostas[codigo] = { nota: null, previas: [] });
+    if (!r.previas.includes(deezerId)) { r.previas.push(deezerId); salvar(); atualizar(); }
+  } catch (e) {
+    previas.delete(deezerId);
+    botao.textContent = "✕"; botao.title = "Prévia indisponível";
+  } finally { botao.disabled = false; }
+}
+player.addEventListener("ended", parar);
+
+// ---------- telas ----------
+function telaInicial() {
+  document.getElementById("barra").hidden = true;
+  const nome = el("input", { type: "text", placeholder: "Seu nome", "aria-label": "Seu nome" });
+  const comecar = () => {
+    const n = nome.value.trim();
+    if (!n) { nome.focus(); return; }
+    estado = carregar(n);
+    if (!estado) {
+      const rnd = aleatorio(semente(DADOS.estudo + "|" + n));
+      estado = { avaliador: n, atual: 0, respostas: {},
+                 ordem: embaralhar(DADOS.itens.map((_, i) => i), rnd),
+                 posicoes: Object.fromEntries(DADOS.itens.map(it => [it.foto, embaralhar(it.playlists.map(p => p.codigo), rnd)])) };
+      salvar();
+    }
+    telaFoto();
+  };
+  nome.addEventListener("keydown", e => { if (e.key === "Enter") comecar(); });
+  app.replaceChildren(
+    el("h1", {}, "A playlist combina com a foto?"),
+    el("div", { class: "cartao" },
+      el("p", { class: "pergunta" }, "Para cada foto, dê uma nota de 1 a 5: quanto cada playlist combina com o clima da foto?"),
+      el("ul", {},
+        el("li", {}, "Avalie o clima (o que a foto passa), não se você gosta das músicas."),
+        el("li", {}, `Ouça pelo menos ${MIN_PREVIAS} prévias de cada playlist antes de dar a nota.`),
+        el("li", {}, `São ${DADOS.itens.length} fotos. Pode parar e voltar depois neste mesmo navegador: as notas ficam guardadas.`),
+        el("li", {}, "No fim, clique em “Exportar respostas” e envie o arquivo .csv.")),
+      el("p", {}, nome, " ", el("button", { class: "botao principal", onclick: comecar }, "Começar"))));
+}
+
+function telaFoto() {
+  parar();
+  const barra = document.getElementById("barra");
+  barra.hidden = false;
+  if (estado.atual >= DADOS.itens.length) return telaFim();
+  const item = DADOS.itens[estado.ordem[estado.atual]];
+  const codigos = estado.posicoes[item.foto];
+  const blocos = codigos.map((codigo, pos) => {
+    const pl = item.playlists.find(p => p.codigo === codigo);
+    const r = () => estado.respostas[codigo] || { nota: null, previas: [] };
+    const contador = el("span", { class: "contador" });
+    const atualizar = () => {
+      const n = r().previas.length;
+      contador.textContent = `${n} prévia${n === 1 ? "" : "s"} ouvida${n === 1 ? "" : "s"}`;
+      contador.classList.toggle("ok", n >= MIN_PREVIAS);
+      atualizarBarra();
+    };
+    const lista = el("ol", {}, ...pl.faixas.map(f => {
+      const botao = el("button", { class: "play", "aria-label": `Ouvir ${f.titulo}` }, "▶");
+      botao.addEventListener("click", () => alternar(botao, f.deezer_id, codigo, atualizar));
+      return el("li", {}, botao, el("div", { class: "faixa" }, el("div", { class: "t" }, f.titulo), el("div", { class: "a" }, f.artista)));
+    }));
+    const escala = el("div", { class: "escala", role: "group", "aria-label": `Nota da playlist ${pos + 1}` },
+      ...ROTULOS.map((rot, i) => {
+        const b = el("button", { "aria-pressed": String(r().nota === i + 1) }, el("b", {}, String(i + 1)), rot);
+        b.addEventListener("click", () => {
+          const resp = estado.respostas[codigo] || (estado.respostas[codigo] = { nota: null, previas: [] });
+          resp.nota = i + 1; resp.quando = new Date().toISOString(); salvar();
+          escala.querySelectorAll("button").forEach((x, j) => x.setAttribute("aria-pressed", String(j === i)));
+          atualizarBarra();
+        });
+        return b;
+      }));
+    atualizar();
+    return el("section", { class: "playlist cartao" }, el("h2", {}, `Playlist ${pos + 1}`, contador), lista,
+      el("div", { class: "suave" }, "Quanto esta playlist combina com o clima da foto?"), escala);
+  });
+  app.replaceChildren(el("div", { class: "tela-foto" },
+    el("img", { src: item.imagem, alt: "Foto a avaliar" }), el("div", {}, ...blocos)));
+  window.scrollTo(0, 0);
+  atualizarBarra();
+}
+
+function atualizarBarra() {
+  const total = DADOS.itens.length;
+  document.getElementById("progresso").textContent = `Foto ${Math.min(estado.atual + 1, total)} de ${total}`;
+  document.getElementById("voltar").disabled = estado.atual === 0;
+  const avancar = document.getElementById("avancar"), aviso = document.getElementById("aviso");
+  if (estado.atual >= total) { avancar.hidden = true; aviso.textContent = ""; return; }
+  avancar.hidden = false;
+  const item = DADOS.itens[estado.ordem[estado.atual]];
+  const rs = estado.posicoes[item.foto].map(c => estado.respostas[c] || { nota: null, previas: [] });
+  avancar.disabled = rs.some(r => !r.nota);
+  aviso.textContent = rs.some(r => r.previas.length < MIN_PREVIAS) ? `Ouça pelo menos ${MIN_PREVIAS} prévias de cada playlist.` : "";
+}
+
+function telaFim() {
+  parar();
+  app.replaceChildren(el("h1", {}, "Pronto, obrigada!"),
+    el("div", { class: "cartao" },
+      el("p", {}, "Clique em “Exportar respostas” e envie o arquivo .csv que vai ser baixado."),
+      el("p", {}, el("button", { class: "botao principal", onclick: exportar }, "Exportar respostas"))));
+  atualizarBarra();
+}
+
+function exportar() {
+  const cab = ["estudo", "avaliador", "foto", "codigo", "posicao", "nota", "previas_ouvidas", "quando"];
+  const linhas = [cab.join(",")];
+  const csv = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  for (const item of DADOS.itens) {
+    estado.posicoes[item.foto].forEach((codigo, pos) => {
+      const r = estado.respostas[codigo];
+      if (!r || !r.nota) return;
+      linhas.push([DADOS.estudo, estado.avaliador, item.foto, codigo, pos + 1, r.nota, r.previas.length, r.quando].map(csv).join(","));
+    });
+  }
+  const blob = new Blob(["﻿" + linhas.join("\n") + "\n"], { type: "text/csv;charset=utf-8" });
+  const a = el("a", { href: URL.createObjectURL(blob), download: `respostas_${estado.avaliador.replace(/[^\p{L}\p{N}]+/gu, "_")}_${DADOS.estudo}.csv` });
+  document.body.append(a); a.click(); a.remove();
+}
+
+document.getElementById("voltar").addEventListener("click", () => { if (estado.atual > 0) { estado.atual--; salvar(); telaFoto(); } });
+document.getElementById("avancar").addEventListener("click", () => { estado.atual++; salvar(); telaFoto(); });
+document.getElementById("exportar").addEventListener("click", exportar);
+telaInicial();
+</script>
+</body>
+</html>

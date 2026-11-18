@@ -6,3 +6,8 @@ audio_previas/
 venv-essentia/
 .DS_Store
 data/cache_lastfm/
+
+# avaliação humana: fotos, respostas (nomes das pessoas) e chave ficam fora do GitHub
+avaliacao/fotos/
+avaliacao/saida/
+avaliacao/respostas/
