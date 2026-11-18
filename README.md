@@ -200,7 +200,7 @@ O Ridge vira uma conta só: `w = coef / scale`, `b = intercept − Σ(coef × me
 | `montar_popularidade.py` | gera `data/popularidade_final.csv` |
 | `contar_rotulos.py`, `baixar_audio.py` | montaram a base (Last.fm/MuSe → prévias do Deezer) |
 | `site/public/` | frontend estático (`index.html`, `app.js`, `styles.css`; `api.js` é o ponto de conexão) |
-| `site/api/_vibez/recomendar.py` | o algoritmo da seção 1 (única cópia, usada pela API, pelo notebook e pelos testes) |
+| `site/api/_vibez/recomendar.py` | o algoritmo da seção 1 (única cópia, usada pela API, pelo notebook e pelos testes) e a versão `clip` do Passo 4, só para a avaliação (`docs/avaliacao.md`, seção 8) |
 | `site/api/index.py` | a API (FastAPI na Vercel): CLIP, leitura da foto e contrato da seção 4; dados em `site/api/_dados/` |
 | `docs/avaliacao.md`, `avaliacao/` | avaliação humana (Passo 3 do review): protocolo, `gerar.py` (página cega para as avaliadoras), `analisar.py` (α de Krippendorff, Wilcoxon) |
 | `tests/` | testes (`python -m unittest discover tests`): algoritmo (`test_recomendar.py`) e α de Krippendorff contra o exemplo publicado (`test_alfa.py`) |

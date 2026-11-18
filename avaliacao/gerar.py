@@ -10,8 +10,9 @@ e grava, em --saida:
 Uso (na raiz do repositório):
   python avaliacao/gerar.py --fotos avaliacao/fotos \
       --versao atual=https://vibez-azure.vercel.app
-  # Passo 4: acrescentar a versão nova, publicada num deploy de prévia
-  #   --versao clip=https://<prévia>.vercel.app
+  # Passo 4: as duas versões vêm da mesma API; o nome (atual/clip) vai no campo "versao"
+  python avaliacao/gerar.py --fotos avaliacao/fotos \
+      --versao atual=https://vibez-azure.vercel.app --versao clip=https://vibez-azure.vercel.app
 """
 import argparse
 import base64
@@ -42,11 +43,11 @@ def jpeg(img, lado_max, qualidade):
     return buf.getvalue()
 
 
-def pedir_playlist(url, nome, conteudo, tentativas=3):
+def pedir_playlist(url, versao, nome, conteudo, tentativas=3):
     for t in range(tentativas):
         try:
             r = requests.post(f"{url}/api/playlist", files={"foto": (nome, conteudo, "image/jpeg")},
-                              data={"generos": "[]"}, timeout=120)
+                              data={"generos": "[]", "versao": versao}, timeout=120)
             if r.status_code == 200:
                 return r.json()
             if r.status_code < 500:
@@ -82,7 +83,7 @@ def main():
         foto_id = f"f{k:02d}"
         playlists = []
         for nome, url in versoes.items():
-            resp = pedir_playlist(url, caminho.name, envio)
+            resp = pedir_playlist(url, nome, caminho.name, envio)
             codigo = secrets.token_hex(3)
             chave["codigos"][codigo] = {"foto": foto_id, "arquivo": caminho.name, "versao": nome, "resposta": resp}
             playlists.append({"codigo": codigo,

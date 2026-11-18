@@ -62,5 +62,57 @@ class TestPlaylist(unittest.TestCase):
                 self.assertTrue({f["genero"] for f in r["faixas"]} <= permitidos)
 
 
+class TestVersaoClip(unittest.TestCase):
+    """Versão do Passo 4: cosseno com os rótulos + proximidade + popularidade, na mesma escala."""
+
+    def conferir_faixas(self, r):
+        TestPlaylist.conferir_faixas(self, r)
+
+    def test_da_15_faixas_sem_repetir_artista(self):
+        for semente in range(5):
+            with self.subTest(semente=semente):
+                self.conferir_faixas(rec.playlist(embedding_fixo(semente), versao="clip"))
+
+    def test_nao_tem_modo_festa(self):
+        r = rec.playlist(embedding_de_festa(), versao="clip")
+        self.assertFalse(r["modo_festa"])
+        self.conferir_faixas(r)
+
+    def test_mesma_foto_da_mesma_playlist(self):
+        self.assertEqual(rec.playlist(embedding_fixo(), versao="clip"),
+                         rec.playlist(embedding_fixo(), versao="clip"))
+
+    def test_genero_escolhido(self):
+        for g in GENEROS_SITE:
+            with self.subTest(genero=g):
+                r = rec.playlist(embedding_fixo(), [g], versao="clip")
+                self.assertTrue({f["genero"] for f in r["faixas"]} <= {g})
+
+    def test_formula(self):
+        # a 1ª música escolhida tem a maior nota da fórmula entre todas
+        from _vibez.recomendar import LAMBDA_CLIP, MU_CLIP, posto_percentil
+        e = embedding_fixo(3)
+        cos, _ = rec.cosseno_rotulos(e)
+        dist = np.linalg.norm(rec.Zm - rec.z_foto(e), axis=1)
+        nota = posto_percentil(cos) + LAMBDA_CLIP * posto_percentil(-dist) + MU_CLIP * posto_percentil(rec.pop)
+        primeira = rec.playlist(e, versao="clip")["faixas"][0]["deezer_id"]
+        self.assertEqual(primeira, rec.deezer_id[int(np.argmax(nota))])
+
+    def test_cosseno_e_a_media_dos_rotulos(self):
+        e = embedding_fixo(4)
+        cos, _ = rec.cosseno_rotulos(e)
+        s = rec.t_rot @ e
+        i = next(k for k, ls in enumerate(rec.listas_rot) if len(ls) >= 2)
+        self.assertAlmostEqual(cos[i], float(np.mean([s[j] for j in rec.listas_rot[i]])), places=6)
+
+    def test_posto_percentil(self):
+        from _vibez.recomendar import posto_percentil
+        np.testing.assert_allclose(posto_percentil(np.array([10, 30, 20, 20])), [0.25, 1.0, 0.625, 0.625])
+
+    def test_versao_desconhecida(self):
+        with self.assertRaises(ValueError):
+            rec.playlist(embedding_fixo(), versao="outra")
+
+
 if __name__ == "__main__":
     unittest.main()

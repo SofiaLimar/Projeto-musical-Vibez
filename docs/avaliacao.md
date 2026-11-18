@@ -72,8 +72,26 @@ Se o intervalo cruzar o zero, as duas versões são consideradas equivalentes ne
 
 - **Passo 3 (agora):** escolher as 50 fotos e fazer um **piloto** com 5 fotos e só a versão atual,
   para testar a página, o tempo da tarefa e se a pergunta está clara.
-- **Passo 4:** gerar as playlists da versão atual e da versão com tags do CLIP (publicada num deploy de prévia)
-  para as 50 fotos, aplicar com as 3 pessoas e analisar.
+- **Passo 4:** gerar as playlists da versão atual e da versão com tags do CLIP para as 50 fotos,
+  aplicar com as 3 pessoas e analisar. As duas versões ficam na mesma API (campo `versao` = `atual` ou `clip`);
+  o site continua usando só a atual.
+
+## 8. A versão comparada no Passo 4 (`versao="clip"`)
+
+Fórmula do review (seção 5, item 4): `cosseno(foto, rótulos da música) + λ · distância valência/energia + μ · rank(pop)`.
+O review não fixa os detalhes; estas escolhas foram feitas **antes** da avaliação e não podem ser ajustadas olhando as 50 fotos:
+
+- **Mesma escala:** os três termos viram posição percentil entre as músicas (0 a 1), como o review sugere para a popularidade.
+  A distância entra invertida (mais perto = posição maior).
+- **Pesos:** λ = μ = 1.
+- **Cosseno com os rótulos:** a média dos cossenos entre a foto e os rótulos do MuSe da música
+  (frase `a photo with a {rótulo} mood`, os mesmos embeddings de `textos.npz`).
+  Para 88% das músicas (1 rótulo só) isso é o mesmo que o maior cosseno. A média foi escolhida (18/11, antes da avaliação)
+  porque o maior cosseno favorece as músicas com mais rótulos: medido com as 13 frases de cena de `textos.npz`
+  como fotos de referência (não as fotos da avaliação), a posição média das músicas com 2–5 rótulos subia de 0,48
+  para 0,61–0,74 com o maior cosseno; com a média, ficava entre 0,31 e 0,46.
+- **Sem modo festa e sem gênero dominante:** o review diz que, se esta versão ganhar, essas regras provavelmente podem sair.
+- Continuam: no máximo 1 música por artista, 15 faixas, e o filtro de gênero quando a pessoa escolhe um gênero.
 
 ## Referência
 

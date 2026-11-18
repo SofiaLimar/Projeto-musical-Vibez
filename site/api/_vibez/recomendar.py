@@ -50,6 +50,16 @@ VIZINHOS = {
 
 PASTA_DADOS = Path(__file__).resolve().parent.parent / "_dados"   # site/api/_dados
 
+# ---------- versão "clip" (Passo 4 do review, docs/REVIEW.md seção 5) ----------
+# nota = cosseno(foto, rótulos da música) + λ · proximidade valência/energia + μ · rank(pop)
+# Os três termos vão para a mesma escala (posição percentil entre as músicas, 0 a 1), como o review
+# sugere para a popularidade; pesos iguais, definidos antes da avaliação (não ajustados nas fotos).
+# Cosseno de uma música com vários rótulos = a média entre eles (o maior favoreceria quem tem mais rótulos).
+# Sem modo festa e sem gênero dominante.
+LAMBDA_CLIP = 1.0
+MU_CLIP = 1.0
+VERSOES = ("atual", "clip")
+
 
 class SemMusicas(ValueError):
     """Nenhuma música atende aos gêneros escolhidos."""
@@ -62,6 +72,13 @@ def artista_base(nome):
 
 def percentil(zv):
     return round(50 * (1 + math.erf(float(zv) / math.sqrt(2))), 1)
+
+
+def posto_percentil(x):
+    """Posição de cada valor entre todos (1/n = menor, 1 = maior); empates recebem a média das posições."""
+    _, inv, cont = np.unique(x, return_inverse=True, return_counts=True)
+    media = np.cumsum(cont) - (cont - 1) / 2
+    return media[inv] / len(x)
 
 
 def nome_playlist(z, festa):
@@ -158,8 +175,13 @@ class Recomendador:
                      f"completamos com {' e '.join(acrescentados)}.")
         return usados, aviso
 
-    def playlist(self, e, generos=()):
-        """e: embedding CLIP da foto (512, normalizado). generos: nomes de GENEROS_SITE."""
+    def playlist(self, e, generos=(), versao="atual"):
+        """e: embedding CLIP da foto (512, normalizado). generos: nomes de GENEROS_SITE.
+        versao: "atual" (a que está no ar) ou "clip" (Passo 4 do review)."""
+        if versao == "clip":
+            return self.playlist_clip(e, generos)
+        if versao != "atual":
+            raise ValueError(f"versão desconhecida: {versao}")
         z = self.z_foto(e)
         pf = self.prob_festa(e)
         festa = pf >= LIMIAR_FESTA
@@ -203,7 +225,34 @@ class Recomendador:
         escolhidas = self.escolher(nota)
         if not escolhidas:
             raise SemMusicas("Não há músicas suficientes nesses gêneros.")
+        return self._resposta(z, festa, pf, rotulos, aviso, escolhidas)
 
+    def cosseno_rotulos(self, e):
+        """Para cada música, a média dos cossenos entre a foto e os seus rótulos do MuSe."""
+        s = self.t_rot @ e   # os embeddings de texto e da foto já são normalizados: produto = cosseno
+        cos = np.array([s[ls].mean() if ls else -1.0 for ls in self.listas_rot])
+        return cos, [self.rotulos[i] for i in np.argsort(-s)[:6]]
+
+    def playlist_clip(self, e, generos=()):
+        z = self.z_foto(e)
+        pf = self.prob_festa(e)   # só informativo: esta versão não tem modo festa
+        cos, rotulos = self.cosseno_rotulos(e)
+        ok = np.isin(self.gen_site, generos) if generos else np.ones(len(self.musicas), bool)
+        idx = np.flatnonzero(ok)
+        if len(idx) == 0:
+            raise SemMusicas("Não há músicas suficientes nesses gêneros.")
+        dist = np.linalg.norm(self.Zm[idx] - z, axis=1)
+        nota = (posto_percentil(cos[idx])
+                + LAMBDA_CLIP * posto_percentil(-dist)          # mais perto = posição maior
+                + MU_CLIP * posto_percentil(self.pop[idx]))
+        completa = np.full(len(self.musicas), np.inf)
+        completa[idx] = -nota                                   # escolher() pega as menores
+        escolhidas = self.escolher(completa)
+        if not escolhidas:
+            raise SemMusicas("Não há músicas suficientes nesses gêneros.")
+        return self._resposta(z, False, pf, rotulos, None, escolhidas)
+
+    def _resposta(self, z, festa, pf, rotulos, aviso, escolhidas):
         return {
             "nome": nome_playlist(z, festa),
             "valencia_pct": percentil(z[0]),

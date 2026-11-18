@@ -28,7 +28,7 @@ from starlette.concurrency import run_in_threadpool
 AQUI = Path(__file__).resolve().parent
 sys.path.insert(0, str(AQUI))
 from _clip_onnx import ClipImagem  # noqa: E402
-from _vibez.recomendar import GENEROS_SITE, Recomendador, SemMusicas  # noqa: E402
+from _vibez.recomendar import GENEROS_SITE, VERSOES, Recomendador, SemMusicas  # noqa: E402
 
 MAX_BYTES = 10 * 1024 * 1024
 
@@ -63,9 +63,9 @@ def clip():
     return _clip
 
 
-def playlist(img, generos):
+def playlist(img, generos, versao):
     try:
-        return rec.playlist(clip().embedding(img), generos)
+        return rec.playlist(clip().embedding(img), generos, versao)
     except SemMusicas as erro:
         raise HTTPException(422, str(erro))
 
@@ -82,7 +82,10 @@ async def saude():
 
 
 @app.post("/api/playlist")
-async def criar_playlist(foto: UploadFile = File(...), generos: str = Form("[]")):
+async def criar_playlist(foto: UploadFile = File(...), generos: str = Form("[]"), versao: str = Form("atual")):
+    # versao: "atual" (o site) ou "clip" (só para a avaliação do Passo 4, docs/avaliacao.md)
+    if versao not in VERSOES:
+        raise HTTPException(400, f"Versão desconhecida: {versao}")
     try:
         lista = json.loads(generos)
         assert isinstance(lista, list)
@@ -101,4 +104,4 @@ async def criar_playlist(foto: UploadFile = File(...), generos: str = Form("[]")
     except (UnidentifiedImageError, OSError):
         raise HTTPException(400, "Não consegui abrir a imagem. Use JPG, PNG ou WEBP.")
     # a foto fica só na memória; nada é gravado
-    return await run_in_threadpool(playlist, img, lista)
+    return await run_in_threadpool(playlist, img, lista, versao)
