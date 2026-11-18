@@ -1,6 +1,7 @@
 # dependências da função Python da Vercel (api/index.py)
-fastapi
-python-multipart
-numpy
-pillow
-onnxruntime
+
+fastapi==0.163.1
+numpy==2.5.5
+onnxruntime==1.32.0
+pillow==13.0.0
+python-multipart==0.0.34

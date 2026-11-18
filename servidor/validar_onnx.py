@@ -18,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "site" / "api"))
 from _clip_onnx import preprocessar  # mesmo pré-processamento que vai para a Vercel
 
 pasta_onnx, pasta_fotos = Path(sys.argv[1]), Path(sys.argv[2])
-modelo = json.loads((Path(__file__).parent / "dados" / "modelo.json").read_text())
+modelo = json.loads((Path(__file__).resolve().parent.parent / "site" / "api" / "_dados" / "modelo.json").read_text())
 W, B = np.array(modelo["W"]), np.array(modelo["b"])
 
 fotos = sorted(p for p in pasta_fotos.iterdir() if p.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp"))
