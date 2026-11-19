@@ -155,7 +155,7 @@ O `api.js` atual espera `POST {API_URL}/playlist` (multipart, campo `foto`). Aju
 
 Escolhida a opção 2, mas **tudo na Vercel** (o Docker do Hugging Face Space exige conta PRO): o site estático e a API Python (`site/api/index.py`, FastAPI) ficam no mesmo projeto Vercel "vibez" (https://vibez-azure.vercel.app; publicar com `npx vercel --prod` dentro de `site/`). O CLIP roda em ONNX (validado: r = 1,0000 contra o PyTorch). A tabela abaixo fica como registro da comparação.
 - O Ridge vai para o servidor como pesos (`modelo.json`, gerado pela seção 5b de `notebooks/foto_parte2_playlist.ipynb`), sem depender da versão do scikit-learn.
-- A resposta manda `valencia_pct`/`energia_pct` (percentil Φ(z) × 100), `aviso`, `genero` por faixa, `modo_festa` e `rotulos`.
+- A resposta manda `valencia_pct`/`energia_pct` (percentil empírico: posição da foto entre as 900 previsões fora da amostra do OASIS, na régua z, guardadas em `modelo.json` como `z_ref`; review, seção 1: *"An empirical percentile from the 900 out-of-sample predictions is more honest"*. Com um `modelo.json` sem `z_ref`, a API usa Φ(z) × 100. Só muda os números mostrados, não a playlist), `aviso`, `genero` por faixa, `modo_festa` e `rotulos`.
 - As prévias são pedidas pelo site ao Deezer (JSONP) só quando a pessoa aperta play.
 
 | | Opção 1 (recomendada): navegador | Opção 2: servidor |
@@ -198,12 +198,24 @@ O Ridge vira uma conta só: `w = coef / scale`, `b = intercept − Σ(coef × me
 | Comparação de modelos de foto | ResNet18 + Ridge 0,56 / 0,57; CLIP zero-shot 0,77 / 0,19; **CLIP + Ridge 0,85 / 0,82** (escolhido) |
 | Notas das músicas contra os rótulos MuSe | AUC energia 0,87, valência 0,81 |
 | Cobertura (900 fotos) | distância até a 15ª música: mediana 0,10; 95% ≤ 0,48 |
+| Foto → humor/energia em fotos do dia a dia (Emotion6, modelo treinado só no OASIS) | r = 0,81 / **0,24** (seção 5b da Parte 1; detalhes abaixo) |
+
+**Fotos do dia a dia: Emotion6 testada (19/11/2026), modelo atual mantido.** O review (`docs/REVIEW.md`, seção 1, linha 61) aponta: *"Training on everyday photos as well (EMOTIC, FI or Emotion6) matters more than tuning Ridge."* Das três bases, só a Emotion6 tem notas de valência e energia da foto inteira, como o OASIS (1.980 fotos do Flickr, 15 pessoas por foto, escala de 1 a 9; Peng et al., CVPR 2015). A FI tem só categorias de emoção, e a EMOTIC anota a emoção aparente de cada pessoa na foto. Licença da Emotion6: só para pesquisa acadêmica, direitos das imagens com os donos; nem as fotos nem as notas estão no repositório. Teste em `notebooks/foto_parte1_treino.ipynb`, seção 5b: os mesmos 5 folds do OASIS da seção 5 e 5 folds sorteados na Emotion6; o modelo combinado treina com as duas bases, cada uma na própria escala (z com média e desvio do treino de cada fold). Medida: r de Pearson, com IC 95% por bootstrap pareado (no OASIS, reamostrando temas).
+
+| Base | Eixo | r atual (só OASIS) | r combinado | Diferença, IC 95% |
+|---|---|---|---|---|
+| Emotion6 | valência | 0,806 | 0,866 | +0,060 [+0,052; +0,068] |
+| Emotion6 | energia | 0,243 | 0,464 | +0,221 [+0,190; +0,254] |
+| OASIS | valência | 0,828 | 0,848 | +0,020 [−0,002; +0,044] |
+| OASIS | energia | 0,823 | 0,717 | −0,106 [−0,150; −0,066] |
+
+Regra fixada antes de rodar: o modelo combinado substituiria o atual se melhorasse com clareza na Emotion6 em pelo menos um eixo, sem piorar com clareza em nenhum eixo da Emotion6 nem do OASIS. Piorou a energia no OASIS, então **o modelo de foto continua treinado só no OASIS**. O teste mostrou um fato importante: em fotos do dia a dia, o modelo atual acerta o humor (r = 0,81), mas quase não acerta a energia (r = 0,24).
 
 ## 6. Limitações
 
 - Medido com pessoas em 18/11/2026 (52 fotos, 3 pessoas): versão atual 4,11 de 5, mas com concordância baixa entre as pessoas (α = 0,10). Detalhes em `docs/avaliacao.md`, seção 9.
 - Nas músicas, humor e energia andam juntos (r = 0,47 nas 2.812 músicas do site, conferido em `site/api/_dados/musicas.json` em 18/11/2026; antes este README dizia 0,38, valor que não bate com os dados atuais); nas fotos, não (−0,06). Fotos "calmas e felizes" e "tensas e agitadas" têm menos músicas disponíveis.
 - O modelo de foto erra quando o negativo está no **sentido**, e não na aparência (incêndio bonito, cartaz de ódio).
-- O OASIS tem muito conteúdo extremo; com fotos do dia a dia, a precisão provavelmente cai.
+- O OASIS tem muito conteúdo extremo. Medido na Emotion6 (fotos do Flickr), o modelo acerta o humor (r = 0,81), mas **quase não acerta a energia** (r = 0,24, contra 0,82 no OASIS): em fotos comuns, a energia da foto é pouco confiável (seção 5).
 - Quase não há música brasileira (a base veio do Last.fm em inglês).
 - 1.149 músicas ficaram sem nota (`sem_preview`) e 427 sem gênero.

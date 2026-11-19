@@ -70,6 +70,14 @@ class TestEngenharia(unittest.TestCase):
         self.assertTrue(ok.any())
         np.testing.assert_array_equal(ok, esperado)
 
+    def test_percentil_empirico(self):
+        from _vibez.recomendar import percentil
+        ref = np.array([-1.0, 0.0, 1.0, 2.0])
+        self.assertEqual(percentil(0.0, ref), 37.5)      # 1 abaixo, 1 empate (conta metade), de 4
+        self.assertEqual(percentil(5.0, ref), 100.0)
+        self.assertEqual(percentil(-5.0, ref), 0.0)
+        self.assertEqual(percentil(0.0), 50.0)           # sem referência: curva normal
+
     def test_top_rotulos(self):
         e = embedding_fixo(5)
         s = rec.t_rot @ e

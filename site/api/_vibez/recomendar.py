@@ -11,7 +11,7 @@ Entra o embedding CLIP da foto (512 números, normalizado); sai a playlist.
 O CLIP em si fica fora daqui: a API usa ONNX e o notebook usa PyTorch.
 
 Dados (gerados pelo notebook, seção 5b, e por ferramentas/preparar_textos.py):
-  modelo.json   Ridge como pesos W, b + media_prev/desvio_prev
+  modelo.json   Ridge como pesos W, b + media_prev/desvio_prev + z_ref (referência do percentil)
   musicas.json  as músicas filtradas, na régua z
   textos.npz    embeddings de texto do CLIP (cenas de festa e rótulos do MuSe)
 """
@@ -70,8 +70,15 @@ def artista_base(nome):
     return re.split(r" & | feat\.? | ft\.? |, | and ", nome.lower())[0].strip()
 
 
-def percentil(zv):
-    return round(50 * (1 + math.erf(float(zv) / math.sqrt(2))), 1)
+def percentil(zv, ref=None):
+    """Posição da foto (0 a 100) entre as previsões de referência: as 900 fotos do OASIS fora da amostra, na régua z
+    (percentil empírico, review: docs/REVIEW.md, seção 1). Empates contam pela metade.
+    Sem referência (modelo.json exportado antes de 19/11/2026), usa a curva normal, Φ(z) × 100."""
+    if ref is None or len(ref) == 0:
+        return round(50 * (1 + math.erf(float(zv) / math.sqrt(2))), 1)
+    abaixo = np.searchsorted(ref, zv, side="left")
+    ate = np.searchsorted(ref, zv, side="right")
+    return round(float(100 * (abaixo + ate) / 2 / len(ref)), 1)
 
 
 def posto_percentil(x):
@@ -95,6 +102,8 @@ class Recomendador:
         self.B = np.array(modelo["b"], dtype=np.float32)
         self.media_prev = np.array(modelo["media_prev"], dtype=np.float32)
         self.desvio_prev = np.array(modelo["desvio_prev"], dtype=np.float32)
+        z_ref = modelo.get("z_ref")                                  # [[valência...], [energia...]], ou ausente
+        self.z_ref = [np.sort(np.asarray(z_ref[j], dtype=np.float32)) for j in range(2)] if z_ref else [None, None]
 
         self.musicas = musicas
         self.Zm = np.array([[m["zv"], m["ze"]] for m in musicas], dtype=np.float32)
@@ -260,8 +269,8 @@ class Recomendador:
     def _resposta(self, z, festa, pf, rotulos, aviso, escolhidas):
         return {
             "nome": nome_playlist(z, festa),
-            "valencia_pct": percentil(z[0]),
-            "energia_pct": percentil(z[1]),
+            "valencia_pct": percentil(z[0], self.z_ref[0]),
+            "energia_pct": percentil(z[1], self.z_ref[1]),
             "z": [round(float(z[0]), 3), round(float(z[1]), 3)],
             "modo_festa": bool(festa),
             "prob_festa": round(pf, 3),
