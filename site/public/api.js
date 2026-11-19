@@ -1,5 +1,5 @@
 /*
- * Ponto de conexão com a API (site/api/index.py, README seção 4).
+ * Ponto de conexão com a API (site/api/index.py, docs/decisoes.md seção 4).
  *
  * Site e API ficam no mesmo projeto da Vercel, então API_URL = "/api".
  * Com API_URL = null, o site usa dados de exemplo (MOCK), sem servidor.
@@ -92,7 +92,7 @@ function acordarServidor() {
 }
 
 /* Prévia de 30 s: os links do Deezer expiram, então pedimos na hora.
- * A API do Deezer não libera CORS; por isso JSONP (README seção 4). */
+ * A API do Deezer não libera CORS; por isso JSONP (docs/decisoes.md seção 4). */
 function buscarPrevia(deezerId) {
   return new Promise((resolve, reject) => {
     const cb = `_deezer_${deezerId}_${Date.now()}`;

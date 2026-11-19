@@ -2,14 +2,14 @@
 API do vibez na Vercel: foto -> playlist.
 
 O algoritmo fica em _vibez/recomendar.py (única cópia, também usada pelo notebook).
-Aqui ficam só o CLIP, a leitura da foto e o contrato da seção 4 do README.
+Aqui ficam só o CLIP, a leitura da foto e o contrato da seção 4 de docs/decisoes.md.
 O CLIP roda em ONNX (sem PyTorch) e reproduz o PyTorch exatamente
-(validado em servidor/validar_onnx.py: r = 1,0000).
+(validado em ferramentas/validar_onnx.py: r = 1,0000).
 
 Dados em _dados/:
   modelo.json   Ridge como pesos W, b + media_prev/desvio_prev (Colab, seção 5b)
   musicas.json  as 2.812 músicas filtradas, na régua z (Colab, seção 5b)
-  textos.npz    embeddings de texto do CLIP (servidor/preparar_textos.py)
+  textos.npz    embeddings de texto do CLIP (ferramentas/preparar_textos.py)
 O encoder de imagem (352 MB) não cabe no pacote: é baixado do Hugging Face
 para /tmp quando a função acorda.
 """
@@ -38,7 +38,7 @@ BASE_CLIP = ("https://huggingface.co/Xenova/clip-vit-base-patch32/resolve/"
 MODELOS_CLIP = {
     "fp32": ("vision_model.onnx", 351_685_709,
              "fd6e1402a588279d1723c7534d4bcba5bc0b14b47dfab0e46f8c47b8270d7d40"),
-    # 4× menor; só trocar MODELO_CLIP para "quantizado" depois de validar com servidor/validar_onnx.py
+    # 4× menor; só trocar MODELO_CLIP para "quantizado" depois de validar com ferramentas/validar_onnx.py
     "quantizado": ("vision_model_quantized.onnx", 89_117_001,
                    "583fd1110a514667812fee7d684952aaf82a99b959760c8d7dca7e0ab9839299"),
 }

@@ -1,4 +1,4 @@
-# Dependências do pipeline de dados (scripts .py da raiz e servidor/).
+# Dependências do pipeline de dados (pipeline/ e ferramentas/).
 # Versões tiradas do venv/ local, onde os scripts rodaram.
 numpy==2.5.4
 pandas==3.1.0
@@ -8,10 +8,10 @@ scikit-learn==1.9.1
 scipy==1.18.1          # avaliacao/analisar.py (teste de Wilcoxon)
 soundfile==0.14.0
 
-# servidor/validar_onnx.py e servidor/preparar_textos.py também usam
+# ferramentas/validar_onnx.py e ferramentas/preparar_textos.py também usam
 # torch, transformers e onnxruntime, que não estão no venv/ — versões a confirmar.
 
 # Notebooks (rodaram no Google Colab, Python 3.13), versões registradas neles:
 #   scikit-learn 1.6.1 e transformers 5.22.1 (gravadas em foto_humor_energia.joblib)
-#   essentia-tensorflow 2.1-beta6-dev (impressa na célula 1 de notas_essentia.ipynb)
+#   essentia-tensorflow 2.1-beta6-dev (impressa na célula 1 de notebooks/notas_essentia.ipynb)
 #   torch: versão não registrada

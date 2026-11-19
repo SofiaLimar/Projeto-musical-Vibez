@@ -1,6 +1,6 @@
 """Pré-calcula os embeddings de texto do CLIP (frases de cena + rótulos MuSe).
 Assim a Vercel só precisa do encoder de imagem.
-Uso: .venv/bin/python preparar_textos.py   (gera site/api/_dados/textos.npz)
+Uso (na raiz do repositório): python ferramentas/preparar_textos.py   (gera site/api/_dados/textos.npz)
 """
 import json
 from pathlib import Path

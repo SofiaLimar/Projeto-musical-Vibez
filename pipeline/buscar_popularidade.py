@@ -7,9 +7,9 @@ e grava o campo "rank" (popularidade do Deezer, 0 a ~1.000.000; maior = mais ouv
 Saída: data/popularidade.csv (deezer_id, rank, artista_deezer_id, album_deezer_id, status)
 Retoma de onde parou. Máximo 8 requisições/s (limite do Deezer: 50 a cada 5 s; ver deezer.py).
 
-Uso:
-  python buscar_popularidade.py --amostra 50    # teste
-  python buscar_popularidade.py                 # todas (~25 min)
+Uso (na raiz do repositório):
+  python pipeline/buscar_popularidade.py --amostra 50    # teste
+  python pipeline/buscar_popularidade.py                 # todas (~25 min)
 """
 import argparse
 from pathlib import Path

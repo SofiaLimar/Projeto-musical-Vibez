@@ -7,8 +7,8 @@ quantas o Last.fm entrega. NÃO usa o atributo total/totalPages da API: no teste
 
 Para de paginar quando: a página vem vazia, a página só traz músicas repetidas, ou atinge N.
 
-Uso:
-  python contar_rotulos.py --por-rotulo 1000
+Uso (na raiz do repositório):
+  python pipeline/contar_rotulos.py --por-rotulo 1000
 """
 import argparse, ast, json, os, sys, time
 from pathlib import Path

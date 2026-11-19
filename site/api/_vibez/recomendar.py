@@ -4,13 +4,13 @@ Algoritmo do vibez: embedding CLIP de uma foto -> playlist.
 Esta é a única cópia do algoritmo. Fica dentro de site/api/ para entrar no deploy
 da Vercel; o "_" no nome impede a Vercel de tratá-la como um endpoint. Quem usa:
   - site/api/index.py (a API na Vercel)
-  - foto_parte2_playlist.ipynb (seção 6)
+  - notebooks/foto_parte2_playlist.ipynb (seção 6)
   - tests/test_recomendar.py
 
 Entra o embedding CLIP da foto (512 números, normalizado); sai a playlist.
 O CLIP em si fica fora daqui: a API usa ONNX e o notebook usa PyTorch.
 
-Dados (gerados pelo notebook, seção 5b, e por servidor/preparar_textos.py):
+Dados (gerados pelo notebook, seção 5b, e por ferramentas/preparar_textos.py):
   modelo.json   Ridge como pesos W, b + media_prev/desvio_prev
   musicas.json  as músicas filtradas, na régua z
   textos.npz    embeddings de texto do CLIP (cenas de festa e rótulos do MuSe)
@@ -23,7 +23,7 @@ from pathlib import Path
 
 import numpy as np
 
-# ---------- parâmetros (README, seção 1) ----------
+# ---------- parâmetros (docs/decisoes.md, seção 1) ----------
 TAMANHO_PLAYLIST = 15
 CANDIDATOS_POR_VAGA = 6
 ALFA = 2          # peso da popularidade (varredura OASIS: 73% das músicas no top 10% de pop, dist p90 0,47)
@@ -36,7 +36,7 @@ ALVO_FESTA = (0.5, 1.0)
 BETA_FESTA = 0.5
 TOP_ROTULOS = 15
 
-# ---------- gênero (README, seção 2) ----------
+# ---------- gênero (docs/decisoes.md, seção 2) ----------
 GENEROS_SITE = ["Pop", "Rock", "Alternativo", "R&B", "Rap/Hip Hop", "Eletrônica", "Trilhas sonoras"]
 VIZINHOS = {
     "Pop": ["R&B", "Alternativo"],

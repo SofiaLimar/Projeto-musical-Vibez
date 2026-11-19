@@ -17,9 +17,9 @@ Processa várias músicas ao mesmo tempo (--trabalhadores, padrão 4), com um co
 velocidade compartilhado (deezer.py): no máximo 8 requisições/s à API (limite do Deezer: 50 a cada 5 s).
 Retoma de onde parou. Falhas de conexão não são gravadas e são tentadas de novo.
 
-Uso:
-  python baixar_audio.py --amostra 50     # teste
-  python baixar_audio.py                  # todas
+Uso (na raiz do repositório):
+  python pipeline/baixar_audio.py --amostra 50     # teste
+  python pipeline/baixar_audio.py                  # todas
 """
 import argparse, csv, hashlib, re, time, unicodedata
 from concurrent.futures import ThreadPoolExecutor, as_completed

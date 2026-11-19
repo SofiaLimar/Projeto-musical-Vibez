@@ -1,8 +1,8 @@
 """
 Confere se o CLIP em ONNX (sem PyTorch) dá as mesmas previsões do CLIP em PyTorch.
-Meta do README: r > 0,98 nas previsões de humor/energia.
+Meta (docs/decisoes.md, seção 4): r > 0,98 nas previsões de humor/energia.
 
-Uso: .venv/bin/python validar_onnx.py <pasta_onnx> <pasta_fotos>
+Uso (na raiz do repositório): python ferramentas/validar_onnx.py <pasta_onnx> <pasta_fotos>
 """
 import json
 import sys
