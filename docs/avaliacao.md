@@ -96,3 +96,40 @@ O review não fixa os detalhes; estas escolhas foram feitas **antes** da avalia�
 ## Referência
 
 Krippendorff, K. (2004). *Content Analysis: An Introduction to Its Methodology* (2ª ed.). Sage. Cap. 11 (confiabilidade).
+
+## 9. Resultado (18/11/2026)
+
+Estudo `481ada02`: 52 fotos, 2 versões (`atual` e `clip`), 3 pessoas (a autora e mais duas), 312 notas.
+Saída de `avaliacao/analisar.py`:
+
+| Medida | Valor |
+|---|---|
+| α de Krippendorff ordinal (intervalar) | **0,101** (0,165): não conclusivo |
+| Nota média, versão atual | 4,11 (desvio 1,06; 156 notas) |
+| Nota média, versão clip | 3,51 (desvio 1,43; 156 notas) |
+| Diferença clip − atual (média por foto) | **−0,60**, IC 95% (bootstrap) [−0,91; −0,30], Wilcoxon p = 0,001 |
+| Fotos em que clip foi melhor / pior / empate | 13 / 30 / 9 |
+
+**Decisão pela regra da seção 6:** a versão `clip` **não substitui** a atual: o α ficou abaixo de 0,667 e o intervalo
+ficou abaixo de zero (não acima). O site, o modo festa e a etapa de gênero dominante continuam como estão.
+
+**Como ler:** com α = 0,10 as notas de cada playlist variaram muito entre as pessoas, então o resultado não permite
+afirmar com segurança que a atual é melhor; permite dizer que a versão `clip`, como definida na seção 8, não mostrou vantagem.
+
+**Leitura exploratória (fora da regra, só para orientar o próximo passo):**
+- as três pessoas, cada uma, deram em média notas menores à `clip` (clip − atual: −0,37, −0,90 e −0,52);
+- foto a foto, os pares de pessoas concordaram sobre qual versão foi melhor em 14, 25 e 26 das 52 fotos;
+- uma pessoa deu nota 5 em 70% das playlists (efeito teto), o que puxa o α para baixo; cada pessoa usou a escala de um jeito.
+
+**Desvios do protocolo:**
+- a autora conhece o sistema (seção 3 pedia, de preferência, pessoas que não conhecem);
+- 21 das 104 playlists da autora e 2 das 104 de outra pessoa tiveram menos de 3 prévias ouvidas (seção 4);
+- dois arquivos de resposta foram abertos e salvos no Numbers: o separador virou ponto e vírgula e o código `6635e4`
+  (foto f24) virou `6,635E+07`. Recuperado sem ambiguidade (era o único código da f24 ausente no arquivo e o valor numérico bate);
+  um terceiro arquivo foi salvo com cada linha entre aspas, desfeito sem perda. Os originais ficam em `avaliacao/respostas/originais/`.
+
+**Consequências para os próximos passos:**
+- estas 52 fotos **não** podem ser usadas para ajustar a versão `clip` (pesos λ e μ, rótulos etc.); um teste de variação
+  pede um segundo conjunto de fotos (seção 2);
+- antes da próxima comparação, rever a pergunta e as instruções (seção 5, α baixo): por exemplo, explicar melhor a escala
+  para reduzir o efeito teto, e reforçar o mínimo de prévias.
