@@ -16,6 +16,7 @@
   .escala { display:grid; grid-template-columns: repeat(5, 1fr); gap:6px; margin-top:6px; }
   .escala button { padding:8px 4px; border:1px solid var(--linha); background:#fff; border-radius:8px; cursor:pointer; font:inherit; font-size:.85rem; line-height:1.2; }
   .escala button b { display:block; font-size:1.1rem; }
+  .escala button:disabled { opacity:.45; cursor:not-allowed; }
   .escala button[aria-pressed="true"] { background:var(--destaque); border-color:var(--destaque); color:#fff; }
   .tela-foto { display:grid; grid-template-columns: minmax(260px, 380px) 1fr; gap:24px; align-items:start; }
   .tela-foto img { width:100%; border-radius:12px; position:sticky; top:16px; }
@@ -156,9 +157,11 @@ function telaInicial() {
       el("p", { class: "pergunta" }, "Para cada foto, dê uma nota de 1 a 5: quanto cada playlist combina com o clima da foto?"),
       el("ul", {},
         el("li", {}, "Avalie o clima (o que a foto passa), não se você gosta das músicas."),
-        el("li", {}, `Ouça pelo menos ${MIN_PREVIAS} prévias de cada playlist antes de dar a nota.`),
+        el("li", {}, "Use a escala inteira. 5 é só para quando todas as músicas que você ouviu combinam com o clima; se uma ou duas destoam, já não é 5. 1 é quando nenhuma combina."),
+        el("li", {}, "Cada playlist recebe a sua nota. As duas playlists de uma foto podem ter a mesma nota, se combinarem igualmente."),
+        el("li", {}, `Os botões de nota só liberam depois que você ouve ${MIN_PREVIAS} prévias daquela playlist.`),
         el("li", {}, `São ${DADOS.itens.length} fotos. Pode parar e voltar depois neste mesmo navegador: as notas ficam guardadas.`),
-        el("li", {}, "No fim, clique em “Exportar respostas” e envie o arquivo .csv.")),
+        el("li", {}, "No fim, clique em “Exportar respostas” e envie o arquivo .csv sem abrir antes (o Numbers e o Excel mudam o arquivo).")),
       el("p", {}, nome, " ", el("button", { class: "botao principal", onclick: comecar }, "Começar"))));
 }
 
@@ -173,10 +176,12 @@ function telaFoto() {
     const pl = item.playlists.find(p => p.codigo === codigo);
     const r = () => estado.respostas[codigo] || { nota: null, previas: [] };
     const contador = el("span", { class: "contador" });
+    let escala = null;
     const atualizar = () => {
       const n = r().previas.length;
       contador.textContent = `${n} prévia${n === 1 ? "" : "s"} ouvida${n === 1 ? "" : "s"}`;
       contador.classList.toggle("ok", n >= MIN_PREVIAS);
+      if (escala) escala.querySelectorAll("button").forEach(x => { x.disabled = n < MIN_PREVIAS; });   // nota travada até ouvir o mínimo
       atualizarBarra();
     };
     const lista = el("ol", {}, ...pl.faixas.map(f => {
@@ -184,7 +189,7 @@ function telaFoto() {
       botao.addEventListener("click", () => alternar(botao, f.deezer_id, codigo, atualizar));
       return el("li", {}, botao, el("div", { class: "faixa" }, el("div", { class: "t" }, f.titulo), el("div", { class: "a" }, f.artista)));
     }));
-    const escala = el("div", { class: "escala", role: "group", "aria-label": `Nota da playlist ${pos + 1}` },
+    escala = el("div", { class: "escala", role: "group", "aria-label": `Nota da playlist ${pos + 1}` },
       ...ROTULOS.map((rot, i) => {
         const b = el("button", { "aria-pressed": String(r().nota === i + 1) }, el("b", {}, String(i + 1)), rot);
         b.addEventListener("click", () => {

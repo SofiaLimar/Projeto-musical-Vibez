@@ -133,3 +133,38 @@ afirmar com segurança que a atual é melhor; permite dizer que a versão `clip`
   pede um segundo conjunto de fotos (seção 2);
 - antes da próxima comparação, rever a pergunta e as instruções (seção 5, α baixo): por exemplo, explicar melhor a escala
   para reduzir o efeito teto, e reforçar o mínimo de prévias.
+
+## 10. Segunda rodada: `atual` × `mahalanobis` (regras fixadas antes, 19/11/2026)
+
+**Por quê.** O review (`docs/REVIEW.md`, seção 1) sugere a distância de Mahalanobis (linha 48), e a versão `mahalanobis`
+(`docs/decisoes.md`, seção 1, "Versões candidatas do review") muda a playlist. Pelo Critical 2 do review
+(*"nothing measures whether the playlist matches the photo"*), ela só pode entrar no site se for medida com pessoas.
+
+**O que fica de fora.** A versão `danca` não entra: esta página pede a playlist sem gênero escolhido, e sem gênero ela dá
+praticamente a mesma playlist que a atual (14,9 de 15 músicas iguais nas fotos de festa simuladas). Ela só muda quando a pessoa
+escolhe um gênero, o que esta avaliação não testa. O efeito dela com gênero fica sem medir.
+
+**Fotos.** As mesmas 52 da 1ª rodada (`avaliacao/fotos/`). Podem ser usadas porque nada da versão `mahalanobis` foi ajustado
+olhando para elas (seção 2: o conjunto reservado serve para comparar versões).
+
+**Pessoas.** 3, como na seção 3, cada uma sozinha, com a página cega e a ordem sorteada.
+
+**Tarefa e pergunta.** As mesmas das seções 1 e 4 (nota de 1 a 5, como o review pede), com as mudanças abaixo.
+
+**Mudanças em relação à 1ª rodada, e por quê** (a seção 9 pediu para rever a pergunta e as instruções, porque o α foi 0,10):
+- a página explica a escala: 5 só quando todas as músicas ouvidas combinam; se uma ou duas destoam, já não é 5; 1 quando nenhuma combina
+  (na 1ª rodada, uma pessoa deu 5 em 70% das playlists);
+- a página avisa que as duas playlists de uma foto podem ter a mesma nota;
+- os botões de nota só liberam depois de ouvir 3 prévias daquela playlist (na 1ª rodada, 23 playlists tiveram menos de 3);
+- a página pede para enviar o .csv sem abrir no Numbers ou no Excel (na 1ª rodada, isso mudou dois arquivos).
+
+**Análise e regra de decisão.** As mesmas das seções 5 e 6, com `mahalanobis` no lugar da versão nova:
+a `mahalanobis` substitui a atual se o α ordinal for ≥ 0,667 **e** a diferença média (mahalanobis − atual) for positiva,
+com o IC 95% inteiro acima de zero. Se o IC cruzar o zero, as duas são consideradas equivalentes e o site fica como está.
+
+**Comandos** (na raiz do repositório; a saída e as respostas ficam fora do git):
+```
+python avaliacao/gerar.py --fotos avaliacao/fotos --saida avaliacao/saida2 \
+    --versao atual=https://vibez-azure.vercel.app --versao mahalanobis=https://vibez-azure.vercel.app
+python avaliacao/analisar.py --chave avaliacao/saida2/chave.json --respostas avaliacao/respostas2
+```

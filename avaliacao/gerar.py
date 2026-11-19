@@ -13,6 +13,9 @@ Uso (na raiz do repositório):
   # Passo 4: as duas versões vêm da mesma API; o nome (atual/clip) vai no campo "versao"
   python avaliacao/gerar.py --fotos avaliacao/fotos \
       --versao atual=https://vibez-azure.vercel.app --versao clip=https://vibez-azure.vercel.app
+  # 2ª rodada (docs/avaliacao.md, seção 10): atual x mahalanobis, numa pasta de saída separada
+  python avaliacao/gerar.py --fotos avaliacao/fotos --saida avaliacao/saida2 \
+      --versao atual=https://vibez-azure.vercel.app --versao mahalanobis=https://vibez-azure.vercel.app
 """
 import argparse
 import base64
