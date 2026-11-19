@@ -33,6 +33,8 @@ foto
 | Repetição | — | **Corrigido (15/11):** além de 1 música por artista, ignora `deezer_id` repetido e usa o artista-base ("Bob Marley & The Wailers" = "Bob Marley"; corta em ` & `, ` feat`, ` ft`, `, `, ` and `). |
 | `MAX_POR_ARTISTA` | 1 | |
 
+**Na prática, a popularidade decide mais que a distância (intencional).** Com `ALFA = 2`, o termo de popularidade (pop entre 0,7 e 1) pode mover a nota de uma música em até 0,6, enquanto as distâncias entre as 90 candidatas diferem em cerca de 0,34 (mediana). O ranking é, portanto, **"as mais populares entre as 90 mais próximas"**: a distância escolhe quais músicas concorrem, e a popularidade decide a ordem entre elas. Medido no review (`docs/REVIEW.md`, seção 1, "popularity outweighs mood"), em `site/api/_dados/musicas.json` (2.812 músicas) com 500 pontos de foto sorteados de N(0, 1) na escala z: o top 15 final tem em média **9,5** músicas em comum com "ordenar as 90 só por popularidade" e **6,4** com "ordenar só por distância". É o efeito buscado ao subir `ALFA` de 0,5 para 2 (ver a linha `ALFA` acima): playlists com músicas conhecidas, dentro do clima da foto. A alternativa do review (colocar distância e popularidade na mesma escala antes de dar os pesos) não foi adotada: a intenção é priorizar músicas conhecidas dentro do clima da foto, e os pesos ficam como estão.
+
 ### Modo festa (regra provisória)
 
 O modelo de foto erra fotos de festa: no OASIS, *Party*, *Drink* e *Alcohol* têm arousal de ~2 a 3, ou seja, são consideradas "calmas". Já os rótulos que o CLIP associa a essas fotos são claros (*celebratory, euphoric, raucous*). A regra é:
