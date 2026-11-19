@@ -130,14 +130,18 @@ class Recomendador:
         p /= p.sum()
         return float(p[:self.n_festa].sum())
 
+    def top_rotulos(self, e, n=6):
+        """Os n rótulos do MuSe mais parecidos com a foto (vão na resposta)."""
+        return [self.rotulos[i] for i in np.argsort(-(self.t_rot @ e))[:n]]
+
     def nota_rotulos(self, e):
+        """rótulo_match de cada música (só o modo festa usa; por isso só é calculado lá)."""
         s = self.t_rot @ e
         top = np.argsort(-s)[:TOP_ROTULOS]
         w = np.zeros(len(self.rotulos))
         ex = np.exp(100 * (s[top] - s[top].max()))
         w[top] = ex / ex.max()
-        tag = np.array([max((w[i] for i in ls), default=0.0) for ls in self.listas_rot])
-        return tag, [self.rotulos[i] for i in top[:6]]
+        return np.array([max((w[i] for i in ls), default=0.0) for ls in self.listas_rot])
 
     # ---------- escolha ----------
     def escolher(self, nota, n=TAMANHO_PLAYLIST):
@@ -156,7 +160,8 @@ class Recomendador:
         return escolhidas
 
     def mesmo_quadrante(self, z):
-        return (np.sign(self.Zm[:, 0]) == np.sign(z[0])) & (np.sign(self.Zm[:, 1]) == np.sign(z[1]))
+        # mesmo critério de nome_playlist: 0 conta como positivo (np.sign daria 0 e não casaria com nada)
+        return ((self.Zm[:, 0] >= 0) == (z[0] >= 0)) & ((self.Zm[:, 1] >= 0) == (z[1] >= 0))
 
     def generos_com_fallback(self, generos, z, n=TAMANHO_PLAYLIST):
         """Se os gêneros escolhidos têm < n músicas no quadrante da foto, completa com vizinhos."""
@@ -185,7 +190,7 @@ class Recomendador:
         z = self.z_foto(e)
         pf = self.prob_festa(e)
         festa = pf >= LIMIAR_FESTA
-        tag, rotulos = self.nota_rotulos(e)
+        rotulos = self.top_rotulos(e)
         aviso = None
         n = TAMANHO_PLAYLIST
         Zm, pop, gen_site = self.Zm, self.pop, self.gen_site
@@ -197,7 +202,7 @@ class Recomendador:
             if ok.sum() < n * 2:
                 ok = gen_ok
             dist = np.linalg.norm(Zm - alvo, axis=1)
-            nota = np.where(ok, dist - ALFA * pop - BETA_FESTA * tag, np.inf)
+            nota = np.where(ok, dist - ALFA * pop - BETA_FESTA * self.nota_rotulos(e), np.inf)
         else:
             if generos:
                 usados, aviso = self.generos_com_fallback(generos, z)

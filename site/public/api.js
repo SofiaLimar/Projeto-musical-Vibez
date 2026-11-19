@@ -4,6 +4,7 @@
  * Site e API ficam no mesmo projeto da Vercel, então API_URL = "/api".
  * Com API_URL = null, o site usa dados de exemplo (MOCK), sem servidor.
  *
+ * Gêneros: GET {API_URL}/generos    -> { generos: [...] }
  * Envio:  POST {API_URL}/playlist   (multipart: "foto" + "generos" em JSON, [] = qualquer)
  * Volta:  { nome, valencia_pct, energia_pct, z, modo_festa, prob_festa, rotulos, aviso,
  *           link_playlist, faixas: [{ titulo, artista, genero, deezer_id, previa_url }] }
@@ -11,7 +12,19 @@
  */
 const API_URL = "/api";
 
-const GENEROS = ["Pop", "Rock", "Alternativo", "R&B", "Rap/Hip Hop", "Eletrônica", "Trilhas sonoras"];
+/* Gêneros que a pessoa pode escolher. A lista fica só na API (site/api/_vibez/recomendar.py).
+ * Se a API não responder (ou no modo de exemplo), o site mostra só "Qualquer". */
+async function carregarGeneros() {
+  if (!API_URL) return [];
+  try {
+    const resp = await fetch(`${API_URL}/generos`);
+    if (!resp.ok) return [];
+    const dados = await resp.json();
+    return Array.isArray(dados.generos) ? dados.generos : [];
+  } catch {
+    return [];
+  }
+}
 
 async function recomendar(arquivo, generos = []) {
   if (!API_URL) return mock(generos);

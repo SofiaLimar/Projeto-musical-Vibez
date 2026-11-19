@@ -15,9 +15,10 @@
 
   // ---------- gêneros ----------
   const caixaGeneros = $("#generos");
+  let generos = [];               // vem da API (carregarGeneros, em api.js)
   function renderGeneros() {
     caixaGeneros.innerHTML = "";
-    ["Qualquer", ...GENEROS].forEach((g) => {
+    ["Qualquer", ...generos].forEach((g) => {
       const b = document.createElement("button");
       b.type = "button";
       b.className = "gen";
@@ -34,6 +35,7 @@
     });
   }
   renderGeneros();
+  carregarGeneros().then((lista) => { generos = lista; renderGeneros(); });
 
   // barras das ondas (decorativas)
   document.querySelectorAll(".ondas").forEach((el) => {

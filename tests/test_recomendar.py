@@ -62,6 +62,20 @@ class TestPlaylist(unittest.TestCase):
                 self.assertTrue({f["genero"] for f in r["faixas"]} <= permitidos)
 
 
+class TestEngenharia(unittest.TestCase):
+    def test_mesmo_quadrante_conta_zero_como_positivo(self):
+        # foto exatamente em 0: casa com as músicas de valência/energia >= 0, como em nome_playlist
+        ok = rec.mesmo_quadrante(np.array([0.0, 0.0]))
+        esperado = (rec.Zm[:, 0] >= 0) & (rec.Zm[:, 1] >= 0)
+        self.assertTrue(ok.any())
+        np.testing.assert_array_equal(ok, esperado)
+
+    def test_top_rotulos(self):
+        e = embedding_fixo(5)
+        s = rec.t_rot @ e
+        self.assertEqual(rec.top_rotulos(e), [rec.rotulos[i] for i in np.argsort(-s)[:6]])
+
+
 class TestVersaoClip(unittest.TestCase):
     """Versão do Passo 4: cosseno com os rótulos + proximidade + popularidade, na mesma escala."""
 

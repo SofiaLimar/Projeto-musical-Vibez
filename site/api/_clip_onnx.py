@@ -3,7 +3,12 @@
 O pré-processamento repete o CLIPProcessor do transformers:
 redimensiona o lado menor para 224 (bicúbico), corta o centro 224×224,
 divide por 255 e normaliza pela média/desvio do CLIP.
+
+baixar() traz o modelo da Hugging Face conferindo tamanho e sha256, com prazo total.
 """
+import hashlib
+import time
+import urllib.request
 from pathlib import Path
 
 import numpy as np
@@ -42,3 +47,25 @@ class ClipImagem:
         x = preprocessar(img)[None].astype(self.tipo)
         e = self.sessao.run(["image_embeds"], {self.entrada.name: x})[0][0].astype(np.float32)
         return e / np.linalg.norm(e)
+
+
+def baixar(url, destino, tamanho, sha256, prazo, abrir=urllib.request.urlopen):
+    """Baixa o modelo conferindo tamanho e sha256; desiste se passar do prazo total."""
+    tmp = destino.with_suffix(".parcial")
+    inicio = time.monotonic()
+    h = hashlib.sha256()
+    try:
+        # o timeout do urlopen vale para cada leitura; o prazo do download inteiro é conferido no laço
+        with abrir(url, timeout=15) as r, open(tmp, "wb") as f:
+            while bloco := r.read(1 << 22):
+                if time.monotonic() - inicio > prazo:
+                    raise RuntimeError(f"Download do modelo passou de {prazo} s.")
+                h.update(bloco)
+                f.write(bloco)
+        if tmp.stat().st_size != tamanho:
+            raise RuntimeError("Download do modelo incompleto.")
+        if h.hexdigest() != sha256:
+            raise RuntimeError("Download do modelo corrompido (sha256 não confere).")
+        tmp.rename(destino)
+    finally:
+        tmp.unlink(missing_ok=True)

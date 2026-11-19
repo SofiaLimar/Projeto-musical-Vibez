@@ -131,6 +131,7 @@ Depois da limpeza e do `POP_MIN`, sobram **2.812 músicas**.
 O `api.js` atual espera `POST {API_URL}/playlist` (multipart, campo `foto`). Ajustes decididos:
 
 - **Entrada:** acrescentar o campo `generos` (lista; vazia = "Qualquer").
+- **Gêneros:** o site pede a lista em `GET {API_URL}/generos` ao abrir; a lista fica só em `site/api/_vibez/recomendar.py` (antes estava repetida no `api.js`).
 - **Saída:** acrescentar `aviso` (texto do fallback ou `null`) e, em cada faixa, `genero`.
 - **Escala:** o `api.js` antigo assumia `valencia`/`energia` de **1 a 9**, mas o modelo de foto prevê na escala **OASIS 1–7**. Para a interface, mandar **percentil** (0–100) ou a versão em z. Não converter 1–7 para 1–9 direto, porque as previsões são comprimidas e quase nada chegaria às pontas.
 - **Prévias:** **não** dá para publicar as 12 mil prévias na Vercel (~6 GB). Duas alternativas:
@@ -142,7 +143,7 @@ O `api.js` atual espera `POST {API_URL}/playlist` (multipart, campo `foto`). Aju
 ### Onde roda o modelo: **servidor (decidido em 14/11/2026)**
 
 Escolhida a opção 2, mas **tudo na Vercel** (o Docker do Hugging Face Space exige conta PRO): o site estático e a API Python (`site/api/index.py`, FastAPI) ficam no mesmo projeto Vercel "vibez" (https://vibez-azure.vercel.app; publicar com `npx vercel --prod` dentro de `site/`). O CLIP roda em ONNX (validado: r = 1,0000 contra o PyTorch). A tabela abaixo fica como registro da comparação.
-- O Ridge vai para o servidor como pesos (`modelo.json`, gerado por `servidor/celula_exportar_colab.py`), sem depender da versão do scikit-learn.
+- O Ridge vai para o servidor como pesos (`modelo.json`, gerado pela seção 5b de `foto_parte2_playlist.ipynb`), sem depender da versão do scikit-learn.
 - A resposta manda `valencia_pct`/`energia_pct` (percentil Φ(z) × 100), `aviso`, `genero` por faixa, `modo_festa` e `rotulos`.
 - As prévias são pedidas pelo site ao Deezer (JSONP) só quando a pessoa aperta play.
 
@@ -153,7 +154,7 @@ Escolhida a opção 2, mas **tudo na Vercel** (o Docker do Hugging Face Space ex
 | Prós | Sem servidor; a foto não sai do aparelho | Idêntico ao Colab |
 | Contras | ~90 MB baixados no 1º acesso; **precisa testar** se as previsões batem com o Python (meta: r > 0,98 nas 900 fotos do OASIS) | O Space grátis "dorme": 30–60 s na primeira foto |
 
-A Vercel não comporta o PyTorch (limite de 250 MB), por isso a API usa **ONNX Runtime**. O encoder de imagem (`vision_model.onnx`, 352 MB, repositório público Xenova, versão fixada) é baixado para `/tmp` quando a função acorda. A primeira foto depois de um tempo parado pode levar ~20 s; o site chama `/api/saude` ao abrir para adiantar isso.
+A Vercel não comporta o PyTorch (limite de 250 MB), por isso a API usa **ONNX Runtime**. O encoder de imagem (`vision_model.onnx`, 352 MB, repositório público Xenova, versão fixada) é baixado para `/tmp` quando a função acorda, com conferência de tamanho e **sha256** e prazo de 45 s para o download inteiro (a função tem 60 s). O arquivo quantizado do mesmo repositório (`vision_model_quantized.onnx`, 89 MB) já está configurado em `site/api/index.py`, mas só deve ser ligado (`MODELO_CLIP = "quantizado"`) depois de passar no `servidor/validar_onnx.py` (meta: r > 0,98). A primeira foto depois de um tempo parado pode levar ~20 s; o site chama `/api/saude` ao abrir para adiantar isso.
 
 O Ridge vira uma conta só: `w = coef / scale`, `b = intercept − Σ(coef × mean / scale)`, aplicada ao embedding **normalizado** (`site/api/_dados/modelo.json`).
 
@@ -196,12 +197,13 @@ O Ridge vira uma conta só: `w = coef / scale`, `b = intercept − Σ(coef × me
 | `foto_parte1_treino.ipynb` | Colab: treina CLIP + Ridge no OASIS e salva o `.joblib` |
 | `notas_essentia.ipynb` | Colab: notas de valência/energia das prévias (MusiCNN + emoMusic) → `notas_musicas.csv` |
 | `foto_parte2_playlist.ipynb` | Colab: limpeza, popularidade, gênero, régua e playlist (a playlist usa `site/api/_vibez/recomendar.py`) |
-| `buscar_popularidade.py`, `buscar_fas_artistas.py`, `buscar_generos_albuns.py` | coletam no Deezer o rank, os fãs e os gêneros (máx. 8 req/s) |
+| `buscar_popularidade.py`, `buscar_fas_artistas.py`, `buscar_generos_albuns.py` | coletam no Deezer o rank, os fãs e os gêneros |
+| `deezer.py` | cliente do Deezer usado pelos scripts de coleta e pelo `baixar_audio.py` (máx. 8 req/s, novas tentativas, retomada) |
 | `montar_popularidade.py` | gera `data/popularidade_final.csv` |
 | `contar_rotulos.py`, `baixar_audio.py` | montaram a base (Last.fm/MuSe → prévias do Deezer) |
 | `site/public/` | frontend estático (`index.html`, `app.js`, `styles.css`; `api.js` é o ponto de conexão) |
 | `site/api/_vibez/recomendar.py` | o algoritmo da seção 1 (única cópia, usada pela API, pelo notebook e pelos testes) e a versão `clip` do Passo 4, só para a avaliação (`docs/avaliacao.md`, seção 8) |
 | `site/api/index.py` | a API (FastAPI na Vercel): CLIP, leitura da foto e contrato da seção 4; dados em `site/api/_dados/` |
 | `docs/avaliacao.md`, `avaliacao/` | avaliação humana (Passo 3 do review): protocolo, `gerar.py` (página cega para as avaliadoras), `analisar.py` (α de Krippendorff, Wilcoxon) |
-| `tests/` | testes (`python -m unittest discover tests`): algoritmo (`test_recomendar.py`) e α de Krippendorff contra o exemplo publicado (`test_alfa.py`) |
-| `servidor/` | Ferramentas da API: `celula_exportar_colab.py` (gera `modelo.json`/`musicas.json` no Colab), `preparar_textos.py` (gera `textos.npz`), `validar_onnx.py`, `rodar_local.py` (site + API no Mac). A API de verdade fica em `site/api/index.py`. |
+| `tests/` | testes (`python -m unittest discover tests`): algoritmo (`test_recomendar.py`), α de Krippendorff contra o exemplo publicado (`test_alfa.py`) e download do modelo (`test_download.py`) |
+| `servidor/` | Ferramentas da API: `preparar_textos.py` (gera `textos.npz`), `validar_onnx.py`, `rodar_local.py` (site + API no Mac). A API de verdade fica em `site/api/index.py`. |
