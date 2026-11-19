@@ -12,3 +12,8 @@ avaliacao/fotos/
 avaliacao/saida/
 avaliacao/respostas/
 avaliacao/saida_piloto/
+
+data/lista_rotulos_1000.csv 
+data/popularidade.csv 
+data/fas_artistas.csv 
+data/generos_albuns.csv

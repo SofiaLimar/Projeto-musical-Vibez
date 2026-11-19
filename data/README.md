@@ -23,12 +23,14 @@ O site em si usa só `site/api/_dados/` (`modelo.json`, `musicas.json`, `textos.
 ## Licença do MuSe (`muse_v3.csv`)
 
 MuSe: The Musical Sentiment Dataset (Akiki e Burghardt, Universidade de Leipzig).
-A versão publicada no Zenodo (https://zenodo.org/records/4281165) tem licença **Creative Commons Attribution 4.0 (CC BY 4.0)**,
-que permite redistribuir desde que os autores sejam citados.
 
-- Citação: Akiki, C. e Burghardt, M. (2021). MuSe: The Musical Sentiment Dataset. *Journal of Open Humanities Data*, 7. https://doi.org/10.5334/johd.33
-- Atenção: o arquivo daqui é a versão **v3** e não é idêntico aos arquivos do Zenodo (md5 diferente).
-  Vale registrar de onde a v3 foi baixada e confirmar que ela tem a mesma licença.
+- **Origem:** Kaggle, `https://www.kaggle.com/datasets/cakiki/muse-the-musical-sentiment-dataset` (conta "cakiki", de Christopher Akiki,
+  primeiro autor), arquivo `muse_v3.csv`, baixado em 13/11/2026. Tem 90.001 músicas, o número do artigo de 2021.
+- **Licença:** Creative Commons Attribution 4.0 (CC BY 4.0), https://creativecommons.org/licenses/by/4.0/, conferida na página do Kaggle em 18/11/2026.
+  Permite redistribuir (inclusive neste repositório) desde que os autores sejam citados.
+- **Citação:** Akiki, C. e Burghardt, M. (2021). MuSe: The Musical Sentiment Dataset. *Journal of Open Humanities Data*, 7. https://doi.org/10.5334/johd.33
+- A versão do Zenodo (https://zenodo.org/records/4281165, também CC BY 4.0) é outro arquivo (`muse_dataset.csv`, 90.408 músicas):
+  não troque um pelo outro sem refazer o pipeline.
 
 As tabelas coletadas do Deezer e do Last.fm vêm das APIs públicas desses serviços.
 
