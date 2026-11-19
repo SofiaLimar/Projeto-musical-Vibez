@@ -139,6 +139,15 @@ Músicas por gênero × quadrante (base com pop ≥ 0,7). Os buracos (< 15) est�
 
 Regra fixada antes de rodar: o DEAM substituiria o emoMusic se melhorasse com clareza em pelo menos um eixo sem piorar com clareza no outro. Piorou em energia, então **as notas das músicas continuam com o emoMusic**. As outras opções do review (CLAP ou MERT) não foram testadas: a Essentia não publica cabeças de valência e energia para esses encoders, e usá-los exigiria treinar uma cabeça nova.
 
+**Notas do MuSe testadas (19/11/2026), áudio sozinho mantido.** O review (`docs/REVIEW.md`, seção 1, linha 57) sugere *"Combine it with the valence/arousal values already in `muse_v3.csv`"*. As notas do MuSe (`valence_tags`, `arousal_tags`) vêm das tags do Last.fm passadas por um dicionário de palavras e só existem para músicas do MuSe (1.565 das 2.812 do site, 56%). Teste em `notebooks/notas_essentia.ipynb`, Célula 6c: as músicas da PMEmo que também estão no MuSe (artista + título normalizados), entre os refrões fora da escolha do modelo; a combinação é a média simples das duas notas em z, com pesos iguais, definida antes de rodar (o review não diz como combinar). Do `metadata.csv` da PMEmo, 14 das 798 linhas foram puladas por terem uma vírgula a mais; 753 dos 767 refrões foram achados.
+
+| Eixo | Áudio (emoMusic) | MuSe | Combinação | Combinação − áudio (Spearman), IC 95% |
+|---|---|---|---|---|
+| valência | 0,560 / 0,705 | 0,495 / 0,673 | 0,638 / 0,733 | +0,078 [−0,053; +0,239] |
+| energia | 0,724 / 0,762 | 0,491 / 0,668 | 0,694 / 0,747 | −0,030 [−0,137; +0,076] |
+
+Valores: Spearman / acerto em pares, nas **46** músicas que estão nos dois (das 556 fora da escolha). Regra fixada antes de rodar: a combinação substituiria o áudio se melhorasse com clareza em pelo menos um eixo sem piorar com clareza no outro. Os dois intervalos cruzam o zero, então **as notas das músicas continuam só com o áudio**. Sozinhas, as notas do MuSe ficaram abaixo do áudio nos dois eixos. Com só 46 músicas, o teste tem pouca precisão: ele não mostra que a combinação é pior, só que não mostrou vantagem.
+
 **Limpeza obrigatória**, feita antes da popularidade, na célula 3c do notebook. O MusiCNN erra com metal extremo (valência fora da escala, energia baixa). São removidas:
 1. as músicas com `valencia < 1`;
 2. as músicas com rótulo agressivo (`aggressive, angry, hostile, menacing, harsh, brash, volatile, fiery`) e `energia` abaixo da mediana.
