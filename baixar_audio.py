@@ -14,14 +14,14 @@ Para cada música:
   5. checa integridade decodificando o MP3 inteiro (soundfile).
 
 Processa várias músicas ao mesmo tempo (--trabalhadores, padrão 4), com um controle de
-velocidade compartilhado: no máximo 8 requisições/s à API (limite do Deezer: 50 a cada 5 s).
+velocidade compartilhado (deezer.py): no máximo 8 requisições/s à API (limite do Deezer: 50 a cada 5 s).
 Retoma de onde parou. Falhas de conexão não são gravadas e são tentadas de novo.
 
 Uso:
   python baixar_audio.py --amostra 50     # teste
   python baixar_audio.py                  # todas
 """
-import argparse, csv, hashlib, re, threading, time, unicodedata
+import argparse, csv, hashlib, re, time, unicodedata
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
@@ -29,25 +29,12 @@ import pandas as pd
 import requests
 import soundfile as sf
 
-DEEZER = "https://api.deezer.com"
-INTERVALO = 0.125               # 8 requisições/s no total, somando todos os trabalhadores
+import deezer
+from deezer import DEEZER
+
 PASTA_AUDIO = Path("audio_previas")
 CAMPOS = ["id", "artista", "titulo", "rotulos", "status", "deezer_id", "deezer_artista",
           "deezer_titulo", "deezer_album", "data_lancamento", "duracao_previa", "arquivo"]
-
-_trava = threading.Lock()
-_ultimo = [0.0]
-_avisos_limite = [0]
-
-
-def esperar_vez():
-    """Garante o intervalo mínimo entre requisições à API, somando todos os trabalhadores."""
-    with _trava:
-        espera = _ultimo[0] + INTERVALO - time.monotonic()
-        if espera > 0:
-            time.sleep(espera)
-        _ultimo[0] = time.monotonic()
-
 
 # ---------- normalização e conferência de nomes ----------
 
@@ -72,24 +59,12 @@ def confere(a, b):
 # ---------- acesso ao Deezer ----------
 
 def get_json(url, params=None):
-    for tentativa in range(5):
-        esperar_vez()
-        try:
-            r = requests.get(url, params=params, timeout=30)
-            if r.status_code == 200:
-                d = r.json()
-                if isinstance(d, dict) and "error" in d:
-                    if d["error"].get("code") == 4:      # limite de requisições
-                        with _trava:
-                            _avisos_limite[0] += 1
-                        time.sleep(5 * (tentativa + 1))
-                        continue
-                    return {}
-                return d
-        except (requests.RequestException, ValueError):
-            pass
-        time.sleep(5 * (tentativa + 1))
-    return None                                          # falha de conexão
+    """JSON da API (controle de velocidade e novas tentativas em deezer.py).
+    Erro do Deezer: {}. Falha de conexão: None."""
+    d = deezer.pedir(url, params, tentativas=5, timeout=30)
+    if isinstance(d, dict) and "error" in d:
+        return {}
+    return d
 
 
 def escolher(candidatos, na, nt):
@@ -233,7 +208,7 @@ def main(entrada, teto, amostra, trabalhadores):
     print(res["status"].value_counts().to_string())
     print(f"ok: {(res['status'] == 'ok').mean():.0%} das {len(res)} processadas")
     print(f"falhas de conexão (serão tentadas de novo): {nao_gravadas}")
-    print(f"vezes que o Deezer pediu para esperar: {_avisos_limite[0]}")
+    print(f"vezes que o Deezer pediu para esperar: {deezer.avisos_limite[0]}")
     print(f"tempo desta rodada: {tempo/60:.1f} min | {tempo/max(len(fila),1):.2f} s por música")
     if n_mp3:
         print(f"áudio: {n_mp3} arquivos, {tamanho/1e6:.0f} MB ({tamanho/n_mp3/1e6:.2f} MB por prévia)")
