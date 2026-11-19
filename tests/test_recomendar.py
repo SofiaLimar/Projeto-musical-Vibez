@@ -84,6 +84,86 @@ class TestEngenharia(unittest.TestCase):
         self.assertEqual(rec.top_rotulos(e), [rec.rotulos[i] for i in np.argsort(-s)[:6]])
 
 
+class TestVersaoMahalanobis(unittest.TestCase):
+    """Candidata do review (linha 48): igual à atual, mas com distância de Mahalanobis."""
+
+    def conferir_faixas(self, r):
+        TestPlaylist.conferir_faixas(self, r)
+
+    def test_da_15_faixas_sem_repetir_artista(self):
+        for semente in range(5):
+            with self.subTest(semente=semente):
+                self.conferir_faixas(rec.playlist(embedding_fixo(semente), versao="mahalanobis"))
+
+    def test_mantem_o_modo_festa(self):
+        r = rec.playlist(embedding_de_festa(), versao="mahalanobis")
+        self.assertTrue(r["modo_festa"])
+        self.conferir_faixas(r)
+
+    def test_genero_escolhido(self):
+        for g in GENEROS_SITE:
+            with self.subTest(genero=g):
+                r = rec.playlist(embedding_fixo(), [g], versao="mahalanobis")
+                self.assertTrue({f["genero"] for f in r["faixas"]} <= {g, *VIZINHOS[g]})
+
+    def test_distancia(self):
+        alvo = np.array([0.3, -0.2], dtype=np.float32)
+        d = rec.Zm - alvo
+        esperado = np.sqrt([v @ rec.S_inv @ v for v in d[:50]])
+        np.testing.assert_allclose(rec.distancia(alvo, True)[:50], esperado, rtol=1e-5)
+        np.testing.assert_allclose(rec.distancia(alvo, False), np.linalg.norm(d, axis=1), rtol=1e-6)
+
+    def test_formula(self):
+        # com gênero escolhido (sem a etapa do gênero dominante): a 1ª faixa tem a menor nota
+        # (distância de Mahalanobis − ALFA · pop) entre as 90 mais próximas por Mahalanobis
+        from _vibez.recomendar import ALFA
+        e = embedding_fixo(2)
+        z = rec.z_foto(e)
+        usados, _ = rec.generos_com_fallback(["Pop"], z)
+        ok = np.isin(rec.gen_site, usados)
+        dist = rec.distancia(z, True)
+        perto = np.argsort(np.where(ok, dist, np.inf))[:90]
+        nota = dist[perto] - ALFA * rec.pop[perto]
+        primeira = rec.playlist(e, ["Pop"], versao="mahalanobis")["faixas"][0]["deezer_id"]
+        self.assertEqual(primeira, rec.deezer_id[int(perto[np.argmin(nota)])])
+
+    def test_muda_a_playlist(self):
+        difere = [rec.playlist(embedding_fixo(k))["faixas"] != rec.playlist(embedding_fixo(k), versao="mahalanobis")["faixas"]
+                  for k in range(20)]
+        self.assertTrue(any(difere))
+
+
+class TestVersaoDanca(unittest.TestCase):
+    """Candidata do review (linha 65): modo festa filtrado pela dançabilidade do áudio."""
+
+    def conferir_faixas(self, r):
+        TestPlaylist.conferir_faixas(self, r)
+
+    def test_todas_as_musicas_tem_dancabilidade(self):
+        self.assertFalse(np.isnan(rec.danca).any())
+
+    def test_festa_so_com_musicas_dancantes(self):
+        from _vibez.recomendar import LIMIAR_DANCA
+        r = rec.playlist(embedding_de_festa(), versao="danca")
+        self.assertTrue(r["modo_festa"])
+        self.conferir_faixas(r)
+        for f in r["faixas"]:
+            self.assertGreater(rec.danca[rec.deezer_id.index(f["deezer_id"])], LIMIAR_DANCA)
+
+    def test_festa_com_rock_muda_a_playlist(self):
+        # sem gênero escolhido, as playlists de festa quase não mudam (o alvo já puxa para alegre e agitada);
+        # a diferença aparece quando a pessoa escolhe um gênero, como Rock (medido em docs/decisoes.md)
+        e = embedding_de_festa()
+        self.assertNotEqual(rec.playlist(e, ["Rock"])["faixas"], rec.playlist(e, ["Rock"], versao="danca")["faixas"])
+
+    def test_fora_da_festa_igual_a_atual(self):
+        for k in range(10):
+            e = embedding_fixo(k)
+            atual = rec.playlist(e)
+            if not atual["modo_festa"]:
+                self.assertEqual(atual["faixas"], rec.playlist(e, versao="danca")["faixas"])
+
+
 class TestVersaoClip(unittest.TestCase):
     """Versão do Passo 4: cosseno com os rótulos + proximidade + popularidade, na mesma escala."""
 

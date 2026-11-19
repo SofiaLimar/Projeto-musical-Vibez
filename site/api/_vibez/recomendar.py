@@ -12,7 +12,7 @@ O CLIP em si fica fora daqui: a API usa ONNX e o notebook usa PyTorch.
 
 Dados (gerados pelo notebook, seção 5b, e por ferramentas/preparar_textos.py):
   modelo.json   Ridge como pesos W, b + media_prev/desvio_prev + z_ref (referência do percentil)
-  musicas.json  as músicas filtradas, na régua z
+  musicas.json  as músicas filtradas, na régua z (+ dancante, para a versão "danca")
   textos.npz    embeddings de texto do CLIP (cenas de festa e rótulos do MuSe)
 """
 import json
@@ -58,7 +58,21 @@ PASTA_DADOS = Path(__file__).resolve().parent.parent / "_dados"   # site/api/_da
 # Sem modo festa e sem gênero dominante.
 LAMBDA_CLIP = 1.0
 MU_CLIP = 1.0
-VERSOES = ("atual", "clip")
+VERSOES = ("atual", "clip", "mahalanobis", "danca")
+
+# ---------- versão "mahalanobis" (review, docs/REVIEW.md seção 1, linha 48) ----------
+# "The songs' two axes are correlated [...] Plain Euclidean distance ignores this; a correlation-aware
+# distance (Mahalanobis) would not." Igual à atual em tudo (90 candidatas, ALFA, modo festa, gênero
+# dominante, 1 por artista), menos a distância: d² = (m − alvo)ᵀ S⁻¹ (m − alvo), com S a covariância
+# das músicas do site na régua z. Candidata para a avaliação com pessoas; o site continua na "atual".
+
+# ---------- versão "danca" (review, docs/REVIEW.md seção 1, linha 65) ----------
+# "party mode is a hand-written rule with five magic constants [...] learn danceability from the audio."
+# Igual à atual em tudo, menos o filtro do modo festa: em vez de zv > 0 e ze > 0,3 (duas constantes
+# feitas à mão), entram as músicas que o classificador danceability-msd-musicnn-1 (Essentia) chama de
+# dançantes, ou seja, probabilidade > 0,5 (a fronteira do próprio classificador). Mesmo recurso da atual:
+# se sobrarem menos de 2 × 15, o filtro sai. Candidata para a avaliação com pessoas.
+LIMIAR_DANCA = 0.5
 
 
 class SemMusicas(ValueError):
@@ -107,7 +121,10 @@ class Recomendador:
 
         self.musicas = musicas
         self.Zm = np.array([[m["zv"], m["ze"]] for m in musicas], dtype=np.float32)
+        self.S_inv = np.linalg.inv(np.cov(self.Zm, rowvar=False))       # versão "mahalanobis"
         self.pop = np.array([m["pop"] for m in musicas], dtype=np.float32)
+        self.danca = np.array([np.nan if m.get("dancante") is None else m["dancante"] for m in musicas],
+                              dtype=np.float32)                     # versão "danca"
         self.gen_site = np.array([m["genero"] for m in musicas])
         self.gen_deezer = np.array([m["genero_deezer"] for m in musicas])
         self.artista = [artista_base(m["artista"]) for m in musicas]
@@ -168,6 +185,13 @@ class Recomendador:
                 break
         return escolhidas
 
+    def distancia(self, alvo, mahalanobis=False):
+        """Distância de cada música até o alvo no plano z: euclidiana (atual) ou de Mahalanobis."""
+        d = self.Zm - alvo
+        if not mahalanobis:
+            return np.linalg.norm(d, axis=1)
+        return np.sqrt(np.einsum("ij,jk,ik->i", d, self.S_inv, d))
+
     def mesmo_quadrante(self, z):
         # mesmo critério de nome_playlist: 0 conta como positivo (np.sign daria 0 e não casaria com nada)
         return ((self.Zm[:, 0] >= 0) == (z[0] >= 0)) & ((self.Zm[:, 1] >= 0) == (z[1] >= 0))
@@ -191,11 +215,14 @@ class Recomendador:
 
     def playlist(self, e, generos=(), versao="atual"):
         """e: embedding CLIP da foto (512, normalizado). generos: nomes de GENEROS_SITE.
-        versao: "atual" (a que está no ar) ou "clip" (Passo 4 do review)."""
+        versao: "atual" (a que está no ar), "clip" (Passo 4 do review), "mahalanobis" ou "danca" (candidatas)."""
         if versao == "clip":
             return self.playlist_clip(e, generos)
-        if versao != "atual":
+        if versao not in ("atual", "mahalanobis", "danca"):
             raise ValueError(f"versão desconhecida: {versao}")
+        if versao == "danca" and np.isnan(self.danca).all():
+            raise ValueError("musicas.json sem 'dancante': exporte de novo (Parte 2, seção 5b).")
+        maha = versao == "mahalanobis"
         z = self.z_foto(e)
         pf = self.prob_festa(e)
         festa = pf >= LIMIAR_FESTA
@@ -207,10 +234,13 @@ class Recomendador:
         if festa:
             alvo = np.array([max(z[0], ALVO_FESTA[0]), max(z[1], ALVO_FESTA[1])])
             gen_ok = np.isin(gen_site, generos) if generos else np.isin(self.gen_deezer, list(GEN_FESTA))
-            ok = gen_ok & (Zm[:, 0] > 0) & (Zm[:, 1] > 0.3)
+            if versao == "danca":
+                ok = gen_ok & (self.danca > LIMIAR_DANCA)              # NaN conta como não dançante
+            else:
+                ok = gen_ok & (Zm[:, 0] > 0) & (Zm[:, 1] > 0.3)
             if ok.sum() < n * 2:
                 ok = gen_ok
-            dist = np.linalg.norm(Zm - alvo, axis=1)
+            dist = self.distancia(alvo, maha)
             nota = np.where(ok, dist - ALFA * pop - BETA_FESTA * self.nota_rotulos(e), np.inf)
         else:
             if generos:
@@ -218,7 +248,7 @@ class Recomendador:
                 ok = np.isin(gen_site, usados)
             else:
                 ok = np.ones(len(self.musicas), bool)
-            dist = np.linalg.norm(Zm - z, axis=1)
+            dist = self.distancia(z, maha)
 
             def nota_perto(ok, k):
                 k = min(int(ok.sum()), k)

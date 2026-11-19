@@ -11,6 +11,7 @@ Os comandos dos scripts rodam na raiz do repositório (ordem completa no `README
 | `lista_rotulos_1000.csv` | 5,7 MB | `pipeline/contar_rotulos.py` (Last.fm) | `pipeline/baixar_audio.py` | intermediário |
 | `audio_teto100.csv` | 2,5 MB | `pipeline/baixar_audio.py` (Deezer) | `pipeline/buscar_popularidade.py`, notebooks | **final** (índice das prévias) |
 | `notas_musicas.csv` | 0,9 MB | `notebooks/notas_essentia.ipynb` (Colab) | `notebooks/foto_parte2_playlist.ipynb` | **final** |
+| `dancabilidade.csv` | 0,1 MB | `notebooks/notas_essentia.ipynb`, Célula 8 (Colab) | `notebooks/foto_parte2_playlist.ipynb` (seção 5b) | **final** |
 | `popularidade.csv` | 0,4 MB | `pipeline/buscar_popularidade.py` (Deezer) | `buscar_fas_artistas.py`, `buscar_generos_albuns.py`, `montar_popularidade.py` | intermediário |
 | `fas_artistas.csv` | 0,1 MB | `pipeline/buscar_fas_artistas.py` (Deezer) | `pipeline/montar_popularidade.py` | intermediário |
 | `generos_albuns.csv` | 0,2 MB | `pipeline/buscar_generos_albuns.py` (Deezer) | `pipeline/montar_popularidade.py` | intermediário |
@@ -42,6 +43,6 @@ quem for rodar em outra conta precisa criar estas pastas (ou mudar os caminhos n
 | Pasta no Drive | O que precisa ter | Quem usa |
 |---|---|---|
 | `mapa-sonoro/` | `oasis/` (baixado pela parte 1), `modelos/` (embeddings do OASIS e `foto_humor_energia.joblib`), `popularidade_final.csv`, `audio_teto100.csv` | `foto_parte1_treino`, `foto_parte2_playlist` |
-| `playlist-foto/` | `audio_teto100.csv`; recebe `notas_musicas.csv` e `embeddings/` | `notas_essentia`, `foto_parte2_playlist` |
+| `playlist-foto/` | `audio_teto100.csv`; recebe `notas_musicas.csv`, `embeddings/` e `dancabilidade.csv` | `notas_essentia`, `foto_parte2_playlist` |
 
 As prévias de áudio (`audio_previas/`, ~12 mil MP3) não ficam no git nem no Drive: o `notas_essentia.ipynb` baixa cada prévia do Deezer na hora.

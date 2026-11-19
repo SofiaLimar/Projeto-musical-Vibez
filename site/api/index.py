@@ -94,7 +94,7 @@ async def generos_do_site():
 
 @app.post("/api/playlist")
 async def criar_playlist(foto: UploadFile = File(...), generos: str = Form("[]"), versao: str = Form("atual")):
-    # versao: "atual" (o site) ou "clip" (só para a avaliação do Passo 4, docs/avaliacao.md)
+    # versao: "atual" (o site); "clip", "mahalanobis" e "danca" só para avaliações (docs/avaliacao.md, docs/decisoes.md)
     if versao not in VERSOES:
         raise HTTPException(400, f"Versão desconhecida: {versao}")
     # validação explícita (um assert some quando o Python roda com -O)

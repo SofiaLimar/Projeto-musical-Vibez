@@ -65,6 +65,18 @@ Os embeddings das 13 frases de cena e dos rótulos são pré-calculados (`site/a
 - **Foto:** usa `media_prev` e `desvio_prev`, que são a média e o desvio das **previsões** fora da amostra, e não das notas humanas. As previsões são ~22% mais comprimidas que as notas humanas; com a régua humana, as fotos nunca chegariam aos extremos.
 - **Música:** usa a média e o desvio das músicas **depois** dos filtros de limpeza e popularidade. O filtro de gênero **não** muda a régua.
 
+### Versões candidatas do review (19/11/2026; não estão no site)
+
+Duas mudanças sugeridas no review (`docs/REVIEW.md`, seção 1) estão em `site/api/_vibez/recomendar.py` como versões que a API aceita (`versao=...`), mas o site continua na `atual`. As duas mudam a playlist, e nenhuma base publicada diz se a playlist ficou melhor: **só podem substituir a atual depois da avaliação com pessoas**. As medidas abaixo dizem quanto a playlist muda, não se melhora.
+
+**`mahalanobis`** (review, linha 48: *"Plain Euclidean distance ignores this; a correlation-aware distance (Mahalanobis) would not"*). Igual à atual em tudo, menos a distância: `d² = (m − alvo)ᵀ S⁻¹ (m − alvo)`, com `S` a covariância das 2.812 músicas na régua z (correlação humor × energia = 0,466). `ALFA`, candidatas, modo festa e gênero dominante ficam iguais. Em 300 fotos simuladas (embeddings aleatórios, não fotos reais): em média 12,1 das 15 músicas são as mesmas da atual (mediana 13; 6% de playlists idênticas; mínimo 0); a distância euclidiana média até as 15 fica igual (0,628 × 0,630).
+
+**`danca`** (review, linha 65: *"party mode is a hand-written rule with five magic constants [...] learn danceability from the audio"*). No modo festa, o filtro `zv > 0` e `ze > 0,3` (duas constantes feitas à mão) é trocado por "dançante" segundo o classificador `danceability-msd-musicnn-1` da Essentia: probabilidade > 0,5, a fronteira do próprio classificador (validação publicada pela Essentia: acurácia normalizada 0,95 em 5 folds, 306 faixas). Mesmo ouvido e mesma configuração das notas (msd-musicnn-1, `patchHopSize=187`, 15 s do meio); calculado na Célula 8 do `notas_essentia.ipynb` (`data/dancabilidade.csv`, as 2.812 músicas do site, nenhuma falha) e exportado no `musicas.json` (`dancante`). O resto do modo festa fica igual.
+- Dados: metade das músicas tem probabilidade > 0,89 (média 0,69); 70% são "dançantes". A dançabilidade anda com a energia (r = 0,58) e um pouco com o humor (0,33); por gênero, mediana 1,00 em Rap, R&B, Electro e Dance, 0,50 em Rock e 0,06 em Jazz.
+- Nos gêneros de festa (1.313 músicas), o filtro atual deixa 423; o novo, 1.092; 97% das 423 também são "dançantes".
+- Efeito na playlist (76 fotos de festa: as 4 frases de festa e embeddings aleatórios que caíram no modo festa): **sem gênero escolhido, quase nada muda** (14,9 de 15 iguais; o alvo já puxa para alegre e agitada, onde quase tudo é dançante). **Com gênero escolhido, muda**: Rock 9,7 de 15 iguais; R&B 13,9; Eletrônica 13,8; Alternativo 13,5; Pop e Rap/Hip Hop praticamente iguais.
+- As outras constantes do modo festa (limiar 0,5 do `prob_festa`, alvo (0,5; 1,0), peso 0,5 do `rótulo_match` e os 15 rótulos) continuam.
+
 ---
 
 ## 2. Gênero (decidido)
