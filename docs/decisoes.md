@@ -118,6 +118,15 @@ Músicas por gênero × quadrante (base com pop ≥ 0,7). Os buracos (< 15) est�
 | `data/popularidade_final.csv` | Mac e Drive | `deezer_id`, `rank`, `nb_fan`, `pop` (0–1), `genero`, `generos`, `genero_origem` |
 | `modelos/foto_humor_energia.joblib` | Drive `mapa-sonoro/` | o modelo de foto, com `media_prev`, `desvio_prev`, `media_oasis` e `desvio_oasis` |
 
+**Cabeça DEAM testada (19/11/2026), emoMusic mantido.** O review (`docs/REVIEW.md`, seção 1, linha 56) sugere *"Use a newer audio model: Essentia's DEAM heads, or a CLAP or MERT encoder"*. Testada a primeira opção: a cabeça `deam-msd-musicnn-2` no mesmo ouvido e na mesma configuração (msd-musicnn-1, `patchHopSize=187`, 15 s do meio, volume original), aplicada ao mesmo embedding de cada refrão que o emoMusic (`notebooks/notas_essentia.ipynb`, Célula 6b). Base: PMEmo, os 567 refrões fora da escolha do modelo. O emoMusic repetiu exatamente a prova completa (0,491 / 0,674 e 0,656 / 0,740).
+
+| Eixo | emoMusic (Spearman / pares) | DEAM (Spearman / pares) | DEAM − emoMusic (Spearman), IC 95% bootstrap pareado |
+|---|---|---|---|
+| valência | 0,491 / 0,674 | 0,656 / 0,734 | +0,165 [+0,099; +0,235] |
+| energia | 0,656 / 0,740 | 0,444 / 0,656 | −0,212 [−0,281; −0,145] |
+
+Regra fixada antes de rodar: o DEAM substituiria o emoMusic se melhorasse com clareza em pelo menos um eixo sem piorar com clareza no outro. Piorou em energia, então **as notas das músicas continuam com o emoMusic**. As outras opções do review (CLAP ou MERT) não foram testadas: a Essentia não publica cabeças de valência e energia para esses encoders, e usá-los exigiria treinar uma cabeça nova.
+
 **Limpeza obrigatória**, feita antes da popularidade, na célula 3c do notebook. O MusiCNN erra com metal extremo (valência fora da escala, energia baixa). São removidas:
 1. as músicas com `valencia < 1`;
 2. as músicas com rótulo agressivo (`aggressive, angry, hostile, menacing, harsh, brash, volatile, fiery`) e `energia` abaixo da mediana.
