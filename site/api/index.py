@@ -38,7 +38,8 @@ BASE_CLIP = ("https://huggingface.co/Xenova/clip-vit-base-patch32/resolve/"
 MODELOS_CLIP = {
     "fp32": ("vision_model.onnx", 351_685_709,
              "fd6e1402a588279d1723c7534d4bcba5bc0b14b47dfab0e46f8c47b8270d7d40"),
-    # 4× menor; só trocar MODELO_CLIP para "quantizado" depois de validar com ferramentas/validar_onnx.py
+    # 4× menor, mas REPROVADO em 18/11/2026 no ferramentas/validar_onnx.py (200 fotos do OASIS):
+    # r humor 0,974 (meta > 0,98), r energia 0,983, cosseno mín. 0,772, dif. máx. de previsão 1,18. Não usar.
     "quantizado": ("vision_model_quantized.onnx", 89_117_001,
                    "583fd1110a514667812fee7d684952aaf82a99b959760c8d7dca7e0ab9839299"),
 }

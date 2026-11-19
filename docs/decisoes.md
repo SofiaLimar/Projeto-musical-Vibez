@@ -154,7 +154,14 @@ Escolhida a opção 2, mas **tudo na Vercel** (o Docker do Hugging Face Space ex
 | Prós | Sem servidor; a foto não sai do aparelho | Idêntico ao Colab |
 | Contras | ~90 MB baixados no 1º acesso; **precisa testar** se as previsões batem com o Python (meta: r > 0,98 nas 900 fotos do OASIS) | O Space grátis "dorme": 30–60 s na primeira foto |
 
-A Vercel não comporta o PyTorch (limite de 250 MB), por isso a API usa **ONNX Runtime**. O encoder de imagem (`vision_model.onnx`, 352 MB, repositório público Xenova, versão fixada) é baixado para `/tmp` quando a função acorda, com conferência de tamanho e **sha256** e prazo de 45 s para o download inteiro (a função tem 60 s). O arquivo quantizado do mesmo repositório (`vision_model_quantized.onnx`, 89 MB) já está configurado em `site/api/index.py`, mas só deve ser ligado (`MODELO_CLIP = "quantizado"`) depois de passar no `ferramentas/validar_onnx.py` (meta: r > 0,98). A primeira foto depois de um tempo parado pode levar ~20 s; o site chama `/api/saude` ao abrir para adiantar isso.
+A Vercel não comporta o PyTorch (limite de 250 MB), por isso a API usa **ONNX Runtime**. O encoder de imagem (`vision_model.onnx`, 352 MB, repositório público Xenova, versão fixada) é baixado para `/tmp` quando a função acorda, com conferência de tamanho e **sha256** e prazo de 45 s para o download inteiro (a função tem 60 s). O arquivo quantizado do mesmo repositório (`vision_model_quantized.onnx`, 89 MB), sugerido pelo review, foi **reprovado** em 18/11/2026 no `ferramentas/validar_onnx.py` (`notebooks/validar_onnx_quantizado.ipynb`, 200 fotos do OASIS, contra o CLIP em PyTorch):
+
+| Modelo | r humor | r energia | cosseno mín. | dif. máx. de previsão |
+|---|---|---|---|---|
+| `vision_model.onnx` (fp32, 352 MB) | 1,0000 | 1,0000 | 0,9999 | 0,012 |
+| `vision_model_quantized.onnx` (89 MB) | 0,9738 | 0,9829 | 0,7723 | 1,184 |
+
+A meta era r > 0,98 nos dois; o humor ficou abaixo, e a diferença de até 1,18 na previsão muda playlists. O site continua com o fp32 (`MODELO_CLIP = "fp32"`). A primeira foto depois de um tempo parado pode levar ~20 s; o site chama `/api/saude` ao abrir para adiantar isso.
 
 O Ridge vira uma conta só: `w = coef / scale`, `b = intercept − Σ(coef × mean / scale)`, aplicada ao embedding **normalizado** (`site/api/_dados/modelo.json`).
 
